@@ -11,7 +11,7 @@ const apiKey = process.env.AZURE_OPENAI_API_KEY;
 const apiVersion = process.env.AZURE_OPENAI_API_VERSION;
 
 const options = { endpoint, apiKey, deployment, apiVersion };
-export const openAIClient = new AzureOpenAI(options);
+export const AzureOpenAIClient = new AzureOpenAI(options);
 
 export async function reasonAboutDisruption(
   disruptionType: string,
@@ -27,15 +27,15 @@ export async function reasonAboutDisruption(
       __dirname + "/../../prompts/reason_about_disruption.md",
       "utf-8"
     );
-    console.log("[Azure OpenAI system message]", systemMessage);
+    // console.log("[Azure OpenAI system message]", systemMessage);
     const userMessage = `\nSupply Chain Disruption: ${disruptionType}\n\nCurrent Supply Chain State:\n${JSON.stringify(currentState, null, 2)}\n\nDisruption Details:\n${JSON.stringify(disruptionDetails, null, 2)}\n\nPlease analyze this situation and provide:\n1. Step-by-step reasoning about the impact\n2. 2-3 specific recommendations with clear actions\n`;
-    console.log("[Azure OpenAI user message]", userMessage);
-    const response = await openAIClient.chat.completions.create({
+    // console.log("[Azure OpenAI user message]", userMessage);
+    const response = await AzureOpenAIClient.chat.completions.create({
       messages: [
         { role: "system", content: systemMessage },
         { role: "user", content: userMessage }
       ],
-      max_completion_tokens: 800,
+      max_completion_tokens: 10000,
       model: modelName
     });
 
@@ -48,7 +48,6 @@ export async function reasonAboutDisruption(
     const content = response.choices[0].message?.content || "";
     // Log the raw model output for debugging
     console.log("[Azure OpenAI raw output]", content);
-    console.log(response.choices[0].message.content);
     
     // Improved parsing: look for 'Reasoning:' and 'Recommendations:'
     let reasoning = "";
