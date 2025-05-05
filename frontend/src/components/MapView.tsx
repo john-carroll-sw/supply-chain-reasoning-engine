@@ -63,83 +63,85 @@ const MapView: React.FC = () => {
     const map = mapRef.current;
     if (!map || !supplyChain || loading) return;
 
-    // Fit map to bounds of all nodes
-    const bounds = new mapboxgl.LngLatBounds();
-    supplyChain.nodes.forEach((node) => {
-      bounds.extend([node.location.lng, node.location.lat]);
-    });
-    map.fitBounds(bounds, { padding: 50 });
+    const onLoad = () => {
+      // Fit map to bounds of all nodes
+      const bounds = new mapboxgl.LngLatBounds();
+      supplyChain.nodes.forEach((node) => {
+        bounds.extend([node.location.lng, node.location.lat]);
+      });
+      map.fitBounds(bounds, { padding: 50 });
 
-    // Add routes as lines
-    supplyChain.routes.forEach((route) => {
-      const fromNode = supplyChain.nodes.find((n) => n.id === route.from);
-      const toNode = supplyChain.nodes.find((n) => n.id === route.to);
+      // Add routes as lines
+      supplyChain.routes.forEach((route) => {
+        const fromNode = supplyChain.nodes.find((n) => n.id === route.from);
+        const toNode = supplyChain.nodes.find((n) => n.id === route.to);
 
-      if (fromNode && toNode) {
-        const routeId = `route-${route.id}`;
-        
-        // Create a line feature
-        const routeFeature: GeoJSON.Feature = {
-          type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates: [
-              [fromNode.location.lng, fromNode.location.lat],
-              [toNode.location.lng, toNode.location.lat],
-            ],
-          },
-          properties: {
-            id: route.id,
-            status: route.status,
-          },
-        };
-
-        // Add source and layer if they don't exist
-        if (!map.getSource(routeId)) {
-          map.addSource(routeId, {
-            type: "geojson",
-            data: routeFeature,
-          });
-
-          map.addLayer({
-            id: routeId,
-            type: "line",
-            source: routeId,
-            layout: {},
-            paint: {
-              "line-color": route.status === "open" ? "rgba(34, 139, 34, 0.8)" : "rgba(220, 20, 60, 0.8)",
-              "line-width": 3,
-              "line-dasharray": route.status === "closed" ? [3, 3] : [1],
+        if (fromNode && toNode) {
+          const routeId = `route-${route.id}`;
+          // Create a line feature
+          const routeFeature: GeoJSON.Feature = {
+            type: "Feature",
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [fromNode.location.lng, fromNode.location.lat],
+                [toNode.location.lng, toNode.location.lat],
+              ],
             },
-          });
+            properties: {
+              id: route.id,
+              status: route.status,
+            },
+          };
+          if (!map.getSource(routeId)) {
+            map.addSource(routeId, {
+              type: "geojson",
+              data: routeFeature,
+            });
+            map.addLayer({
+              id: routeId,
+              type: "line",
+              source: routeId,
+              layout: {},
+              paint: {
+                "line-color": route.status === "open" ? "rgba(34, 139, 34, 0.8)" : "rgba(220, 20, 60, 0.8)",
+                "line-width": 3,
+                "line-dasharray": route.status === "closed" ? [3, 3] : [1],
+              },
+            });
+          }
         }
+      });
+      // Add nodes as markers
+      supplyChain.nodes.forEach((node) => {
+        const el = document.createElement("div");
+        el.className = `node-${node.type}`;
+        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
+          `<div class="node-popup">
+            <h3>${node.name}</h3>
+            <p>Type: ${formatNodeType(node.type)}</p>
+            ${Object.entries(node.inventory)
+              .map(([sku, quantity]) => `<p>${sku}: ${quantity} units</p>`)
+              .join("")}
+          </div>`
+        );
+        new mapboxgl.Marker(el)
+          .setLngLat([node.location.lng, node.location.lat])
+          .setPopup(popup)
+          .addTo(map);
+      });
+    };
+
+    if (map.isStyleLoaded()) {
+      onLoad();
+    } else {
+      map.once("load", onLoad);
+    }
+    return () => {
+      if (map) {
+        map.off("load", onLoad);
       }
-    });
-
-    // Add nodes as markers
-    supplyChain.nodes.forEach((node) => {
-      // Create marker element
-      const el = document.createElement("div");
-      el.className = `node-${node.type}`;
-
-      // Add popup with node info
-      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
-        `<div class="node-popup">
-          <h3>${node.name}</h3>
-          <p>Type: ${formatNodeType(node.type)}</p>
-          ${Object.entries(node.inventory)
-            .map(([sku, quantity]) => `<p>${sku}: ${quantity} units</p>`)
-            .join("")}
-        </div>`
-      );
-
-      // Add marker to map
-      new mapboxgl.Marker(el)
-        .setLngLat([node.location.lng, node.location.lat])
-        .setPopup(popup)
-        .addTo(map);
-    });
-
+    };
   }, [supplyChain, loading]);
 
   // Helper to format node type for display
