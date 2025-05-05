@@ -27,6 +27,18 @@
   margin: 4px 0;
 }
 
+.mapboxgl-popup-content,
+.mapboxgl-popup {
+  background: #23262F !important;
+  color: #F4F4F4 !important;
+  border-radius: 10px;
+  box-shadow: 0 2px 16px 0 #000a;
+}
+
+.node-popup h3 {
+  color: #00FFD0;
+}
+
 .node-factory,
 .node-distribution_center,
 .node-retail {

@@ -9,9 +9,10 @@ import { getSupplyChainState, triggerDisruption, getReasoning } from "../api/sup
 
 interface ControlsPanelProps {
   onReasoningResult?: (result: ReasoningResponse) => void;
+  onStateChange?: () => void;
 }
 
-const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult }) => {
+const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStateChange }) => {
   const [supplyChain, setSupplyChain] = useState<SupplyChainState | null>(null);
   const [disruptionType, setDisruptionType] = useState<string>("");
   const [nodeId, setNodeId] = useState<string>("");
@@ -77,6 +78,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult }) => {
       // Refresh supply chain state
       const updatedData = await getSupplyChainState();
       setSupplyChain(updatedData);
+      if (onStateChange) onStateChange();
     } catch (error) {
       console.error("Error triggering disruption:", error);
       setSnackbar({
