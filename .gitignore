@@ -47,3 +47,4 @@ output/
 *.csv
 .DS_Store
 do-not-commit
+backend/node_modules
