@@ -9,6 +9,31 @@ mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
 
 const MAP_CENTER: [number, number] = [-122.41, 37.78]; // San Francisco area
 
+// Oakland Bay Bridge coordinates (approximate)
+const OAKLAND_BAY_BRIDGE = [
+  [-122.346, 37.798], // West end
+  [-122.334, 37.817], // East end
+];
+// San Mateo Bridge midpoint (for detour)
+const SAN_MATEO_BRIDGE = [-122.267, 37.585];
+
+// Helper to check if a line crosses the Oakland Bay Bridge
+function crossesOaklandBayBridge(from: [number, number], to: [number, number]) {
+  // Simple bounding box check for demo purposes
+  const [x1, y1] = from;
+  const [x2, y2] = to;
+  const [bx1, by1] = OAKLAND_BAY_BRIDGE[0];
+  const [bx2, by2] = OAKLAND_BAY_BRIDGE[1];
+  // If one point is south of the bridge and one is north, and both are west of the east end and east of the west end
+  const minBridgeLat = Math.min(by1, by2);
+  const maxBridgeLat = Math.max(by1, by2);
+  const crossesLat = (y1 < minBridgeLat && y2 > maxBridgeLat) || (y2 < minBridgeLat && y1 > maxBridgeLat);
+  const minLng = Math.min(bx1, bx2);
+  const maxLng = Math.max(bx1, bx2);
+  const crossesLng = (x1 >= minLng && x1 <= maxLng) || (x2 >= minLng && x2 <= maxLng);
+  return crossesLat && crossesLng;
+}
+
 const MapLegend: React.FC = () => (
   <div className="map-legend">
     <div className="map-legend-row">
@@ -107,6 +132,8 @@ const MapView: React.FC = () => {
     const map = mapRef.current;
     if (!map || !supplyChain || loading) return;
 
+    const closedBridges: string[] = supplyChain.closedBridges || [];
+
     const onLoad = async () => {
       // Fit map to bounds of all nodes
       const bounds = new mapboxgl.LngLatBounds();
@@ -121,23 +148,48 @@ const MapView: React.FC = () => {
         const toNode = supplyChain.nodes.find((n) => n.id === route.to);
         if (fromNode && toNode) {
           const routeId = `route-${route.id}`;
-          let coordinates = await fetchDrivingRoute(
+          let coordinates: number[][] | null = null;
+          // If Oakland Bay Bridge is closed and this route would cross it, add detour via San Mateo Bridge
+          if (closedBridges.includes("oakland_bay_bridge") && crossesOaklandBayBridge(
             [fromNode.location.lng, fromNode.location.lat],
-            [toNode.location.lng, toNode.location.lat],
-            routeId
-          );
-          if (!coordinates) {
-            // fallback to straight line
-            coordinates = [
+            [toNode.location.lng, toNode.location.lat]
+          )) {
+            // Fetch route with waypoint at San Mateo Bridge
+            const accessToken = mapboxgl.accessToken;
+            const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${fromNode.location.lng},${fromNode.location.lat};${SAN_MATEO_BRIDGE[0]},${SAN_MATEO_BRIDGE[1]};${toNode.location.lng},${toNode.location.lat}?geometries=geojson&access_token=${accessToken}`;
+            try {
+              const resp = await fetch(url);
+              const data = await resp.json();
+              if (data.routes && data.routes[0] && data.routes[0].geometry && data.routes[0].geometry.coordinates) {
+                coordinates = data.routes[0].geometry.coordinates;
+                // Only add to cache if not null
+                if (coordinates) {
+                  routeCache.current[routeId] = coordinates;
+                }
+              }
+            } catch (err) {
+              // fallback to straight line if API fails
+              console.error("Error fetching route with waypoint:", err);
+              coordinates = null;
+            }
+          } else {
+            coordinates = await fetchDrivingRoute(
               [fromNode.location.lng, fromNode.location.lat],
               [toNode.location.lng, toNode.location.lat],
-            ];
+              routeId
+            );
           }
+          // Set default coordinates if null
+          const routeCoordinates = coordinates || [
+            [fromNode.location.lng, fromNode.location.lat],
+            [toNode.location.lng, toNode.location.lat],
+          ];
+
           const routeFeature: GeoJSON.Feature = {
             type: "Feature",
             geometry: {
               type: "LineString",
-              coordinates,
+              coordinates: routeCoordinates,
             },
             properties: {
               id: route.id,

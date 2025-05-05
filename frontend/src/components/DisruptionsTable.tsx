@@ -8,7 +8,7 @@ interface DisruptionsTableProps {
 }
 
 interface Disruption {
-  type: "Stockout" | "Route Closed";
+  type: "Stockout" | "Route Closed" | "Bridge Closed";
   node: string;
   sku: string;
   details: string;
@@ -21,6 +21,7 @@ const DisruptionsTable: React.FC<DisruptionsTableProps> = ({ refreshKey }) => {
     const fetchDisruptions = async () => {
       const state: SupplyChainState = await getSupplyChainState();
       const disruptionList: Disruption[] = [];
+      
       // Stockouts
       state.nodes.forEach(node => {
         Object.entries(node.inventory).forEach(([sku, qty]) => {
@@ -47,6 +48,19 @@ const DisruptionsTable: React.FC<DisruptionsTableProps> = ({ refreshKey }) => {
           });
         }
       });
+      // Closed bridges
+      if (state.closedBridges && state.closedBridges.length > 0) {
+        state.closedBridges.forEach(bridgeId => {
+          let bridgeName = bridgeId;
+          if (bridgeId === "oakland_bay_bridge") bridgeName = "Oakland Bay Bridge";
+          disruptionList.push({
+            type: "Bridge Closed",
+            node: bridgeName,
+            sku: "-",
+            details: `${bridgeName} is closed, routes will be redirected`
+          });
+        });
+      }
       setDisruptions(disruptionList);
     };
     fetchDisruptions();

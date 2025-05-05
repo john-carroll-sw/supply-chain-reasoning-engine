@@ -18,13 +18,15 @@ export interface SupplyChainRoute {
 export interface SupplyChainState {
   nodes: SupplyChainNode[];
   routes: SupplyChainRoute[];
+  closedBridges?: string[];
 }
 
 export interface DisruptionRequest {
-  type: 'stockout' | 'route_closed';
+  type: 'stockout' | 'route_closed' | 'bridge_closed';
   nodeId?: string;
   sku?: string;
   routeId?: string;
+  bridgeId?: string;
 }
 
 export interface ReasoningRequest {

@@ -18,6 +18,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
   const [nodeId, setNodeId] = useState<string>("");
   const [routeId, setRouteId] = useState<string>("");
   const [sku, setSku] = useState<string>("skuA");
+  const [bridgeId, setBridgeId] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [reasoningLoading, setReasoningLoading] = useState<boolean>(false);
   const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: "success" | "error"}>({
@@ -43,9 +44,15 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
   useEffect(() => {
     if (disruptionType === "stockout") {
       setRouteId("");
+      setBridgeId("");
     } else if (disruptionType === "route_closed") {
       setNodeId("");
       setSku("");
+      setBridgeId("");
+    } else if (disruptionType === "bridge_closed") {
+      setNodeId("");
+      setSku("");
+      setRouteId("");
     }
   }, [disruptionType]);
 
@@ -60,10 +67,11 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
     }
 
     const disruption: DisruptionRequest = {
-      type: disruptionType as "stockout" | "route_closed",
+      type: disruptionType as "stockout" | "route_closed" | "bridge_closed",
       nodeId: disruptionType === "stockout" ? nodeId : undefined,
       sku: disruptionType === "stockout" ? sku : undefined,
       routeId: disruptionType === "route_closed" ? routeId : undefined,
+      bridgeId: disruptionType === "bridge_closed" ? bridgeId : undefined,
     };
 
     try {
@@ -110,6 +118,8 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
         details.sku = sku;
       } else if (disruptionType === "route_closed") {
         details.routeId = routeId;
+      } else if (disruptionType === "bridge_closed") {
+        details.bridgeId = bridgeId;
       }
 
       const result = await getReasoning({
@@ -177,6 +187,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
         >
           <MenuItem value="stockout">Stockout</MenuItem>
           <MenuItem value="route_closed">Route Closed</MenuItem>
+          <MenuItem value="bridge_closed">Bridge Closed</MenuItem>
         </Select>
         <FormHelperText>Select the type of disruption to simulate</FormHelperText>
       </FormControl>
@@ -234,11 +245,24 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
         </FormControl>
       )}
 
+      {disruptionType === "bridge_closed" && (
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Bridge</InputLabel>
+          <Select
+            value={bridgeId}
+            onChange={(e) => setBridgeId(e.target.value)}
+            label="Bridge"
+          >
+            <MenuItem value="oakland_bay_bridge">Oakland Bay Bridge</MenuItem>
+          </Select>
+        </FormControl>
+      )}
+
       <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
         <Button
           variant="contained"
           onClick={handleTriggerDisruption}
-          disabled={loading || !disruptionType || (disruptionType === "stockout" && (!nodeId || !sku)) || (disruptionType === "route_closed" && !routeId)}
+          disabled={loading || !disruptionType || (disruptionType === "stockout" && (!nodeId || !sku)) || (disruptionType === "route_closed" && !routeId) || (disruptionType === "bridge_closed" && !bridgeId)}
         >
           {loading ? <CircularProgress size={24} /> : "Trigger Disruption"}
         </Button>
@@ -246,7 +270,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
         <Button
           variant="outlined"
           onClick={handleGetReasoning}
-          disabled={reasoningLoading || !disruptionType || (disruptionType === "stockout" && (!nodeId || !sku)) || (disruptionType === "route_closed" && !routeId)}
+          disabled={reasoningLoading || !disruptionType || (disruptionType === "stockout" && (!nodeId || !sku)) || (disruptionType === "route_closed" && !routeId) || (disruptionType === "bridge_closed" && !bridgeId)}
         >
           {reasoningLoading ? <CircularProgress size={24} /> : "Get AI Reasoning"}
         </Button>
