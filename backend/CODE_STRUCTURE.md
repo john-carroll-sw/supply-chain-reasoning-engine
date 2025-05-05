@@ -1,3 +1,5 @@
+# Code Structure
+
 src/
   index.ts         # Main server entry point
   routes/

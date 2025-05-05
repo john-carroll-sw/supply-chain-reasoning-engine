@@ -11,6 +11,7 @@
   - Demo data (supply chain network)
 
 Other files:
+
 - BUILD_PLAN.md (project plan)
 - supplychain.md (domain context)
 

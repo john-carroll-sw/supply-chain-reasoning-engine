@@ -21,7 +21,7 @@ export async function reasonAboutDisruption(
   recommendations: Array<{ title: string; description: string }>;
 }> {
   try {
-    const systemMessage = `You are a supply chain optimization expert.\nYour task is to analyze a supply chain disruption and provide reasoning and recommendations.\nFocus on practical solutions that minimize costs and delivery delays.\nAlways think step by step about:\n1. The immediate impact of the disruption\n2. Possible alternative routes or sources\n3. Trade-offs between different solutions\n4. Implementation timeline and difficulty\n\nReturn your analysis in a structured format with clear reasoning and 2-3 specific recommendations.`;
+    const systemMessage = `You are a supply chain optimization expert.\nYour task is to analyze a supply chain disruption and provide reasoning and recommendations.\nFocus on practical solutions that minimize costs and delivery delays.\nAlways think step by step about:\n1. The immediate impact of the disruption\n2. Possible alternative routes or sources\n3. Trade-offs between different solutions\n4. Implementation timeline and difficulty\n\nRespond in this format:\nReasoning: <step-by-step reasoning>\nRecommendations:\n1. <first recommendation>\n2. <second recommendation>\n3. <third recommendation>\n`;
 
     const userMessage = `\nSupply Chain Disruption: ${disruptionType}\n\nCurrent Supply Chain State:\n${JSON.stringify(currentState, null, 2)}\n\nDisruption Details:\n${JSON.stringify(disruptionDetails, null, 2)}\n\nPlease analyze this situation and provide:\n1. Step-by-step reasoning about the impact\n2. 2-3 specific recommendations with clear actions\n`;
 
@@ -31,7 +31,7 @@ export async function reasonAboutDisruption(
         { role: "user", content: userMessage }
       ],
       max_completion_tokens: 800,
-      model: modelName // modelName is now always a string
+      model: modelName
     });
 
     if (!response.choices || response.choices.length === 0) {
@@ -39,23 +39,29 @@ export async function reasonAboutDisruption(
     }
 
     const content = response.choices[0].message?.content || "";
-    const parts = content.split(/Recommendations:|Recommendation:/i);
-    const reasoning = parts[0].trim();
-    const recommendationText = parts[1]?.trim() || "";
-    const recommendationRegex = /(\d+\.\s*[^:]+):\s*([^]*?)(?=\d+\.|$)/g;
-    const recommendations: Array<{ title: string, description: string }> = [];
-    let match;
-    while ((match = recommendationRegex.exec(recommendationText)) !== null) {
-      recommendations.push({
-        title: match[1].trim(),
-        description: match[2].trim()
-      });
+    // Log the raw model output for debugging
+    console.log("[Azure OpenAI raw output]", content);
+    
+    // Improved parsing: look for 'Reasoning:' and 'Recommendations:'
+    let reasoning = "";
+    let recommendations: Array<{ title: string, description: string }> = [];
+    const reasoningMatch = content.match(/Reasoning:(.*?)(Recommendations:|$)/is);
+    if (reasoningMatch) {
+      reasoning = reasoningMatch[1].trim();
     }
-    if (recommendations.length === 0 && recommendationText) {
-      recommendations.push({
-        title: "Recommendation",
-        description: recommendationText
-      });
+    const recsMatch = content.match(/Recommendations:(.*)$/is);
+    if (recsMatch) {
+      const recLines = recsMatch[1].split(/\n|\r/).filter(line => line.trim().length > 0);
+      for (const line of recLines) {
+        const recMatch = line.match(/^(\d+)\.\s*(.*)$/);
+        if (recMatch) {
+          recommendations.push({ title: `Recommendation ${recMatch[1]}`, description: recMatch[2].trim() });
+        }
+      }
+    }
+    // Fallback: if parsing fails, return the whole output as a single recommendation
+    if (!reasoning && !recommendations.length && content) {
+      return { reasoning: content, recommendations: [{ title: "Recommendation", description: content }] };
     }
     return { reasoning, recommendations };
   } catch (error) {
