@@ -3,11 +3,21 @@ import { Typography, Box, Divider, Card, CardContent, Chip, Paper } from "@mui/m
 import type { ReasoningResponse } from "../types/supplyChain";
 
 interface ReasoningPanelProps {
-  reasoning?: ReasoningResponse;
+  reasoning: ReasoningResponse | undefined;
 }
 
 const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ reasoning }) => {
-  if (!reasoning || (!reasoning.reasoning && reasoning.recommendations.length === 0)) {
+  if (!reasoning) {
+    return (
+      <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+          Trigger a disruption and use "Get AI Reasoning" to see analysis here.
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (!reasoning.reasoning && reasoning.recommendations.length === 0) {
     return (
       <div>
         <Typography variant="h6">AI Reasoning & Recommendations</Typography>

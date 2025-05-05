@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { supplyChain, SupplyChainState } from '../data/supplyChain';
 
+// Store the initial state for reset
+let initialSupplyChain: typeof supplyChain | null = null;
+
 // GET /api/supplychain
 export const getSupplyChain = (req: Request, res: Response): void => {
   res.json(supplyChain);
@@ -31,4 +34,14 @@ export const postDisrupt = (req: Request, res: Response): void => {
     return;
   }
   res.status(400).json({ status: 'error', message: 'Invalid disruption request' });
-}
+};
+
+// POST /api/supplychain/reset
+export const resetSupplyChain = (req: Request, res: Response): void => {
+  if (!initialSupplyChain) {
+    // Deep clone the initial state on first call
+    initialSupplyChain = JSON.parse(JSON.stringify(supplyChain));
+  }
+  Object.assign(supplyChain, JSON.parse(JSON.stringify(initialSupplyChain)));
+  res.json({ status: "ok", message: "Supply chain state reset to initial demo data." });
+};

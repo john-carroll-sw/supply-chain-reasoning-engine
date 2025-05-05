@@ -55,3 +55,16 @@ export const getReasoning = async (
   }
   return response.json();
 };
+
+/**
+ * Resets the supply chain state to its initial demo data
+ */
+export const resetSupplyChain = async (): Promise<{ status: string; message: string }> => {
+  const response = await fetch(`${API_BASE}/supplychain/reset`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to reset supply chain state');
+  }
+  return response.json();
+};

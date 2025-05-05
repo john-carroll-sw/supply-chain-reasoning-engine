@@ -9,6 +9,23 @@ mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
 
 const MAP_CENTER: [number, number] = [-122.41, 37.78]; // San Francisco area
 
+const MapLegend: React.FC = () => (
+  <div className="map-legend">
+    <div className="map-legend-row">
+      <span className="node-factory map-legend-icon"></span>
+      Factory
+    </div>
+    <div className="map-legend-row">
+      <span className="node-distribution_center map-legend-icon"></span>
+      Distribution Center
+    </div>
+    <div className="map-legend-row">
+      <span className="node-retail map-legend-icon"></span>
+      Retail
+    </div>
+  </div>
+);
+
 const MapView: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -159,7 +176,8 @@ const MapView: React.FC = () => {
   };
 
   return (
-    <div className="map-container" ref={mapContainer}>
+    <div className="map-container map-container-relative" ref={mapContainer}>
+      <MapLegend />
       {loading && (
         <div className="loading-indicator">
           Loading...

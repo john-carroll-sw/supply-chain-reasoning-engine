@@ -23,11 +23,11 @@ export interface SupplyChainState {
 // Initial demo data
 export let supplyChain: SupplyChainState = {
   nodes: [
-    { id: 'f1', name: 'Factory 1', type: 'factory', inventory: { skuA: 1000 }, location: { lat: 37.78, lng: -122.41 } },
-    { id: 'dc1', name: 'DC 1', type: 'distribution_center', inventory: { skuA: 500 }, location: { lat: 37.80, lng: -122.27 } },
-    { id: 'dc2', name: 'DC 2', type: 'distribution_center', inventory: { skuA: 200 }, location: { lat: 37.85, lng: -122.30 } },
-    { id: 'r1', name: 'Retail 1', type: 'retail', inventory: { skuA: 0 }, location: { lat: 37.77, lng: -122.42 } },
-    { id: 'r2', name: 'Retail 2', type: 'retail', inventory: { skuA: 50 }, location: { lat: 37.76, lng: -122.45 } },
+    { id: 'f1', name: 'Factory 1', type: 'factory', inventory: { skuA: 1000, skuB: 800, skuC: 600 }, location: { lat: 37.78, lng: -122.41 } },
+    { id: 'dc1', name: 'DC 1', type: 'distribution_center', inventory: { skuA: 500, skuB: 100, skuC: 50 }, location: { lat: 37.80, lng: -122.27 } },
+    { id: 'dc2', name: 'DC 2', type: 'distribution_center', inventory: { skuA: 200, skuB: 300, skuC: 0 }, location: { lat: 37.85, lng: -122.30 } },
+    { id: 'r1', name: 'Retail 1', type: 'retail', inventory: { skuA: 0, skuB: 20, skuC: 10 }, location: { lat: 37.77, lng: -122.42 } },
+    { id: 'r2', name: 'Retail 2', type: 'retail', inventory: { skuA: 50, skuB: 0, skuC: 5 }, location: { lat: 37.76, lng: -122.45 } },
   ],
   routes: [
     { id: 'r-f1-dc1', from: 'f1', to: 'dc1', status: 'open' },

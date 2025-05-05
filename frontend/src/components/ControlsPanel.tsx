@@ -5,10 +5,10 @@ import {
   Alert, Snackbar
 } from "@mui/material";
 import type { SupplyChainState, DisruptionRequest, ReasoningResponse } from "../types/supplyChain";
-import { getSupplyChainState, triggerDisruption, getReasoning } from "../api/supplyChainApi";
+import { getSupplyChainState, triggerDisruption, getReasoning, resetSupplyChain as resetSupplyChainApi } from "../api/supplyChainApi";
 
 interface ControlsPanelProps {
-  onReasoningResult?: (result: ReasoningResponse) => void;
+  onReasoningResult?: (result: ReasoningResponse | undefined) => void;
   onStateChange?: () => void;
 }
 
@@ -139,6 +139,29 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
     }
   };
 
+  const handleReset = async () => {
+    try {
+      setLoading(true);
+      await resetSupplyChainApi();
+      setSnackbar({
+        open: true,
+        message: "Demo state reset to initial values.",
+        severity: "success"
+      });
+      if (onStateChange) onStateChange();
+      // Optionally, also clear reasoning panel
+      if (onReasoningResult) onReasoningResult(undefined);
+    } catch {
+      setSnackbar({
+        open: true,
+        message: "Failed to reset demo state.",
+        severity: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Paper elevation={1} sx={{ p: 2 }}>
       <Typography variant="h6" gutterBottom>
@@ -226,6 +249,14 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
           disabled={reasoningLoading || !disruptionType || (disruptionType === "stockout" && (!nodeId || !sku)) || (disruptionType === "route_closed" && !routeId)}
         >
           {reasoningLoading ? <CircularProgress size={24} /> : "Get AI Reasoning"}
+        </Button>
+        <Button
+          variant="text"
+          color="secondary"
+          onClick={handleReset}
+          disabled={loading || reasoningLoading}
+        >
+          Reset Demo State
         </Button>
       </Box>
 
