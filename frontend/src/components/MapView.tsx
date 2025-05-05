@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import mapboxgl from "mapbox-gl";
+import "./MapView.css";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
 
@@ -23,7 +24,7 @@ const MapView: React.FC = () => {
   }, []);
 
   return (
-    <div ref={mapContainer} style={{ width: "100%", height: "100%", borderRadius: 8 }} />
+    <div ref={mapContainer} className="map-container" />
   );
 };
 
