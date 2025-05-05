@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { supplyChain, SupplyChainState } from '../data/supplyChain';
 
-// Store the initial state for reset
-let initialSupplyChain: typeof supplyChain | null = null;
+// Store the initial state immediately when this module is loaded
+const initialSupplyChain: SupplyChainState = JSON.parse(JSON.stringify(supplyChain));
 
 // GET /api/supplychain
 export const getSupplyChain = (req: Request, res: Response): void => {
@@ -38,10 +38,7 @@ export const postDisrupt = (req: Request, res: Response): void => {
 
 // POST /api/supplychain/reset
 export const resetSupplyChain = (req: Request, res: Response): void => {
-  if (!initialSupplyChain) {
-    // Deep clone the initial state on first call
-    initialSupplyChain = JSON.parse(JSON.stringify(supplyChain));
-  }
+  // Reset to the initial state captured when the module was first loaded
   Object.assign(supplyChain, JSON.parse(JSON.stringify(initialSupplyChain)));
   res.json({ status: "ok", message: "Supply chain state reset to initial demo data." });
 };
