@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box } from "@mui/material";
+import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box, TableSortLabel } from "@mui/material";
 import type { SupplyChainNode, SupplyChainState } from "../types/supplyChain";
 import { getSupplyChainState } from "../api/supplyChainApi";
 
@@ -19,6 +19,8 @@ const formatNodeType = (type: string): string => {
 const NodeSummaryTable: React.FC = () => {
   const [nodes, setNodes] = useState<SupplyChainNode[]>([]);
   const [skus, setSkus] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<string>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,6 +36,28 @@ const NodeSummaryTable: React.FC = () => {
     fetchData();
   }, []);
 
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedNodes = [...nodes].sort((a, b) => {
+    let aValue: string | number = a[sortBy as keyof SupplyChainNode] as string | number;
+    let bValue: string | number = b[sortBy as keyof SupplyChainNode] as string | number;
+    if (sortBy.startsWith('sku:')) {
+      const sku = sortBy.replace('sku:', '');
+      aValue = a.inventory[sku] ?? 0;
+      bValue = b.inventory[sku] ?? 0;
+    }
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
@@ -43,15 +67,33 @@ const NodeSummaryTable: React.FC = () => {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell sx={{ color: '#00FFD0', fontWeight: 700 }}>Name</TableCell>
-              <TableCell sx={{ color: '#00FFD0', fontWeight: 700 }}>Type</TableCell>
+              <TableCell sx={{ color: '#00FFD0', fontWeight: 700 }}>
+                <TableSortLabel
+                  active={sortBy === 'name'}
+                  direction={sortBy === 'name' ? sortDirection : 'asc'}
+                  onClick={() => handleSort('name')}
+                >Name</TableSortLabel>
+              </TableCell>
+              <TableCell sx={{ color: '#00FFD0', fontWeight: 700 }}>
+                <TableSortLabel
+                  active={sortBy === 'type'}
+                  direction={sortBy === 'type' ? sortDirection : 'asc'}
+                  onClick={() => handleSort('type')}
+                >Type</TableSortLabel>
+              </TableCell>
               {skus.map((sku) => (
-                <TableCell key={sku} sx={{ color: '#00FFD0', fontWeight: 700 }}>{sku}</TableCell>
+                <TableCell key={sku} sx={{ color: '#00FFD0', fontWeight: 700 }}>
+                  <TableSortLabel
+                    active={sortBy === `sku:${sku}`}
+                    direction={sortBy === `sku:${sku}` ? sortDirection : 'asc'}
+                    onClick={() => handleSort(`sku:${sku}`)}
+                  >{sku}</TableSortLabel>
+                </TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
-            {nodes.map((node) => (
+            {sortedNodes.map((node) => (
               <TableRow key={node.id}>
                 <TableCell sx={{ color: '#F4F4F4' }}>{node.name}</TableCell>
                 <TableCell sx={{ color: '#F4F4F4' }}>{formatNodeType(node.type)}</TableCell>

@@ -135,6 +135,23 @@ const MapView: React.FC = () => {
     const closedBridges: string[] = supplyChain.closedBridges || [];
 
     const onLoad = async () => {
+      // Remove all previous route sources and layers using public API
+      const style = map.getStyle();
+      if (style && style.layers) {
+        style.layers.forEach((layer) => {
+          if (layer.id.startsWith('route-') && map.getLayer(layer.id)) {
+            map.removeLayer(layer.id);
+          }
+        });
+      }
+      if (style && style.sources) {
+        Object.keys(style.sources).forEach((sourceId) => {
+          if (sourceId.startsWith('route-') && map.getSource(sourceId)) {
+            map.removeSource(sourceId);
+          }
+        });
+      }
+
       // Fit map to bounds of all nodes
       const bounds = new mapboxgl.LngLatBounds();
       supplyChain.nodes.forEach((node) => {

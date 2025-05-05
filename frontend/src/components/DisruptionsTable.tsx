@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box, Chip } from "@mui/material";
+import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box, Chip, TableSortLabel, IconButton, Tooltip } from "@mui/material";
+import SortIcon from '@mui/icons-material/Sort';
 import type { SupplyChainState } from "../types/supplyChain";
 import { getSupplyChainState } from "../api/supplyChainApi";
 
@@ -16,6 +17,8 @@ interface Disruption {
 
 const DisruptionsTable: React.FC<DisruptionsTableProps> = ({ refreshKey }) => {
   const [disruptions, setDisruptions] = useState<Disruption[]>([]);
+  const [sortBy, setSortBy] = useState<keyof Disruption>('type');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     const fetchDisruptions = async () => {
@@ -66,33 +69,81 @@ const DisruptionsTable: React.FC<DisruptionsTableProps> = ({ refreshKey }) => {
     fetchDisruptions();
   }, [refreshKey]);
 
+  // Sort disruptions
+  const sortedDisruptions = [...disruptions].sort((a, b) => {
+    const dir = sortDirection === 'asc' ? 1 : -1;
+    if (a[sortBy] < b[sortBy]) return -1 * dir;
+    if (a[sortBy] > b[sortBy]) return 1 * dir;
+    return 0;
+  });
+
+  const handleSort = (column: keyof Disruption) => {
+    if (sortBy === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortDirection('desc');
+    }
+  };
+
   return (
     <Box>
-      <Typography variant="h6" gutterBottom>
-        Active Disruptions
-      </Typography>
+      <Box display="flex" alignItems="center" justifyContent="space-between">
+        <Typography variant="h6" gutterBottom>
+          Active Disruptions
+        </Typography>
+        <Tooltip title={`Sort: ${sortDirection === 'asc' ? 'Ascending' : 'Descending'}`}> 
+          <IconButton onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}>
+            <SortIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
       <TableContainer component={Paper} sx={{ background: '#23262F', color: '#F4F4F4' }}>
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell sx={{ color: '#FF61A6', fontWeight: 700 }}>Type</TableCell>
-              <TableCell sx={{ color: '#FF61A6', fontWeight: 700 }}>Node/Route</TableCell>
-              <TableCell sx={{ color: '#FF61A6', fontWeight: 700 }}>SKU</TableCell>
-              <TableCell sx={{ color: '#FF61A6', fontWeight: 700 }}>Details</TableCell>
+              <TableCell sx={{ color: '#FF61A6', fontWeight: 700 }}>
+                <TableSortLabel
+                  active={sortBy === 'type'}
+                  direction={sortBy === 'type' ? sortDirection : 'asc'}
+                  onClick={() => handleSort('type')}
+                >Type</TableSortLabel>
+              </TableCell>
+              <TableCell sx={{ color: '#FF61A6', fontWeight: 700 }}>
+                <TableSortLabel
+                  active={sortBy === 'node'}
+                  direction={sortBy === 'node' ? sortDirection : 'asc'}
+                  onClick={() => handleSort('node')}
+                >Node/Route</TableSortLabel>
+              </TableCell>
+              <TableCell sx={{ color: '#FF61A6', fontWeight: 700 }}>
+                <TableSortLabel
+                  active={sortBy === 'sku'}
+                  direction={sortBy === 'sku' ? sortDirection : 'asc'}
+                  onClick={() => handleSort('sku')}
+                >SKU</TableSortLabel>
+              </TableCell>
+              <TableCell sx={{ color: '#FF61A6', fontWeight: 700 }}>
+                <TableSortLabel
+                  active={sortBy === 'details'}
+                  direction={sortBy === 'details' ? sortDirection : 'asc'}
+                  onClick={() => handleSort('details')}
+                >Details</TableSortLabel>
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {disruptions.length === 0 ? (
+            {sortedDisruptions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} sx={{ color: '#B0B3B8', fontStyle: 'italic' }}>
                   No active disruptions.
                 </TableCell>
               </TableRow>
             ) : (
-              disruptions.map((d, idx) => (
+              sortedDisruptions.map((d, idx) => (
                 <TableRow key={idx}>
                   <TableCell>
-                    <Chip label={d.type} color={d.type === "Stockout" ? "secondary" : "primary"} size="small" />
+                    <Chip label={d.type} color={d.type === "Stockout" ? "secondary" : d.type === "Bridge Closed" ? "warning" : "primary"} size="small" />
                   </TableCell>
                   <TableCell sx={{ color: '#F4F4F4' }}>{d.node}</TableCell>
                   <TableCell sx={{ color: '#F4F4F4' }}>{d.sku}</TableCell>
