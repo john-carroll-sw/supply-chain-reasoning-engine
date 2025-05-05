@@ -33,6 +33,33 @@ const MapView: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Cache for route polylines
+  const routeCache = useRef<{ [key: string]: number[][] }>({});
+
+  // Helper to fetch driving route from Mapbox Directions API
+  const fetchDrivingRoute = async (
+    from: [number, number],
+    to: [number, number],
+    routeId: string
+  ): Promise<number[][] | null> => {
+    if (routeCache.current[routeId]) return routeCache.current[routeId];
+    const accessToken = mapboxgl.accessToken;
+    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from[0]},${from[1]};${to[0]},${to[1]}?geometries=geojson&access_token=${accessToken}`;
+    try {
+      const resp = await fetch(url);
+      const data = await resp.json();
+      if (data.routes && data.routes[0] && data.routes[0].geometry && data.routes[0].geometry.coordinates) {
+        routeCache.current[routeId] = data.routes[0].geometry.coordinates;
+        return data.routes[0].geometry.coordinates;
+      }
+    } catch (error) {
+      // fallback to straight line if API fails
+      console.error("Error fetching driving route:", error);
+      return null;
+    }
+    return null;
+  };
+
   // Fetch supply chain data
   useEffect(() => {
     const fetchData = async () => {
@@ -80,7 +107,7 @@ const MapView: React.FC = () => {
     const map = mapRef.current;
     if (!map || !supplyChain || loading) return;
 
-    const onLoad = () => {
+    const onLoad = async () => {
       // Fit map to bounds of all nodes
       const bounds = new mapboxgl.LngLatBounds();
       supplyChain.nodes.forEach((node) => {
@@ -88,22 +115,29 @@ const MapView: React.FC = () => {
       });
       map.fitBounds(bounds, { padding: 50 });
 
-      // Add routes as lines
-      supplyChain.routes.forEach((route) => {
+      // Add routes as driving polylines
+      for (const route of supplyChain.routes) {
         const fromNode = supplyChain.nodes.find((n) => n.id === route.from);
         const toNode = supplyChain.nodes.find((n) => n.id === route.to);
-
         if (fromNode && toNode) {
           const routeId = `route-${route.id}`;
-          // Create a line feature
+          let coordinates = await fetchDrivingRoute(
+            [fromNode.location.lng, fromNode.location.lat],
+            [toNode.location.lng, toNode.location.lat],
+            routeId
+          );
+          if (!coordinates) {
+            // fallback to straight line
+            coordinates = [
+              [fromNode.location.lng, fromNode.location.lat],
+              [toNode.location.lng, toNode.location.lat],
+            ];
+          }
           const routeFeature: GeoJSON.Feature = {
             type: "Feature",
             geometry: {
               type: "LineString",
-              coordinates: [
-                [fromNode.location.lng, fromNode.location.lat],
-                [toNode.location.lng, toNode.location.lat],
-              ],
+              coordinates,
             },
             properties: {
               id: route.id,
@@ -126,9 +160,13 @@ const MapView: React.FC = () => {
                 "line-dasharray": route.status === "closed" ? [3, 3] : [1],
               },
             });
+          } else {
+            // update source if already exists
+            (map.getSource(routeId) as mapboxgl.GeoJSONSource).setData(routeFeature);
           }
         }
-      });
+      }
+
       // Add nodes as markers
       supplyChain.nodes.forEach((node) => {
         const el = document.createElement("div");
