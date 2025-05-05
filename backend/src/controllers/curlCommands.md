@@ -1,31 +1,39 @@
-# Okay, here are the `curl` commands for your requests
+# API Test Commands
 
-**1. GET Request:**
+## Get Supply Chain State
 
 ```bash
 curl http://localhost:4000/api/supplychain
 ```
 
-* Alternatively, you can explicitly specify the GET method using `-X GET`:
-
-    ```bash
-    curl -X GET http://localhost:4000/api/supplychain
-    ```
-
-**2. POST Request with JSON body:**
+## Trigger a Stockout Disruption
 
 ```bash
-curl -X POST \
+curl -X POST http://localhost:4000/api/supplychain/disrupt \
   -H "Content-Type: application/json" \
-  -d '{ "type": "stockout", "nodeId": "r1", "sku": "skuA" }' \
-  http://localhost:4000/api/supplychain/disrupt
+  -d '{"type": "stockout", "nodeId": "r1", "sku": "skuA"}'
 ```
 
-**Explanation:**
+## Trigger a Route Closed Disruption
 
-* `curl`: The command-line tool.
-* `-X POST`: Specifies the HTTP method as POST.
-* `-H "Content-Type: application/json"`: Sets the `Content-Type` header to indicate that the request body contains JSON data. This is crucial for the server to correctly interpret the body.
-* `-d '{ "type": "stockout", "nodeId": "r1", "sku": "skuA" }'`: Provides the data to be sent in the request body. The single quotes (`'`) around the JSON string are often used to prevent shell interpretation issues with the double quotes (`"`) inside the JSON.
-* `http://localhost:4000/api/supplychain/disrupt`: The target URL for the POST request.
-* The backslashes (`\`) are used just for line continuation in the example to make it more readable; you can write the command on a single line without them.
+```bash
+curl -X POST http://localhost:4000/api/supplychain/disrupt \
+  -H "Content-Type: application/json" \
+  -d '{"type": "route_closed", "routeId": "r-dc1-r1"}'
+```
+
+## Get AI Reasoning for a Stockout
+
+```bash
+curl -X POST http://localhost:4000/api/reason \
+  -H "Content-Type: application/json" \
+  -d '{"disruptionType": "stockout", "details": {"nodeId": "r1", "sku": "skuA"}}'
+```
+
+## Get AI Reasoning for a Route Closure
+
+```bash
+curl -X POST http://localhost:4000/api/reason \
+  -H "Content-Type: application/json" \
+  -d '{"disruptionType": "route_closed", "details": {"routeId": "r-dc1-r1"}}'
+```

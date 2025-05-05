@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import healthRouter from './routes/health';
 import supplyChainRouter from './routes/supplyChain';
+import reasoningRouter from './routes/reasoning';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -18,6 +19,9 @@ app.use('/api/health', healthRouter);
 
 // Supply chain API routes
 app.use('/api/supplychain', supplyChainRouter);
+
+// Reasoning AI routes
+app.use('/api/reason', reasoningRouter);
 
 app.get('/', (req, res) => {
   res.send('Supply Chain Reasoning API is running.');
