@@ -1,14 +1,244 @@
-import React from "react";
-import { Paper, Typography } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { 
+  Paper, Typography, FormControl, InputLabel, MenuItem,
+  Select, Button, Box, FormHelperText, CircularProgress,
+  Alert, Snackbar
+} from "@mui/material";
+import type { SupplyChainState, DisruptionRequest, ReasoningResponse } from "../types/supplyChain";
+import { getSupplyChainState, triggerDisruption, getReasoning } from "../api/supplyChainApi";
 
-const ControlsPanel: React.FC = () => {
+interface ControlsPanelProps {
+  onReasoningResult?: (result: ReasoningResponse) => void;
+}
+
+const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult }) => {
+  const [supplyChain, setSupplyChain] = useState<SupplyChainState | null>(null);
+  const [disruptionType, setDisruptionType] = useState<string>("");
+  const [nodeId, setNodeId] = useState<string>("");
+  const [routeId, setRouteId] = useState<string>("");
+  const [sku, setSku] = useState<string>("skuA");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [reasoningLoading, setReasoningLoading] = useState<boolean>(false);
+  const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: "success" | "error"}>({
+    open: false,
+    message: "",
+    severity: "success"
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getSupplyChainState();
+        setSupplyChain(data);
+      } catch (err) {
+        console.error("Error fetching supply chain data:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Reset secondary fields when disruption type changes
+  useEffect(() => {
+    if (disruptionType === "stockout") {
+      setRouteId("");
+    } else if (disruptionType === "route_closed") {
+      setNodeId("");
+      setSku("");
+    }
+  }, [disruptionType]);
+
+  const handleTriggerDisruption = async () => {
+    if (!disruptionType) {
+      setSnackbar({
+        open: true,
+        message: "Please select a disruption type",
+        severity: "error"
+      });
+      return;
+    }
+
+    const disruption: DisruptionRequest = {
+      type: disruptionType as "stockout" | "route_closed",
+      nodeId: disruptionType === "stockout" ? nodeId : undefined,
+      sku: disruptionType === "stockout" ? sku : undefined,
+      routeId: disruptionType === "route_closed" ? routeId : undefined,
+    };
+
+    try {
+      setLoading(true);
+      const result = await triggerDisruption(disruption);
+      setSnackbar({
+        open: true,
+        message: result.message || "Disruption triggered successfully",
+        severity: "success"
+      });
+      
+      // Refresh supply chain state
+      const updatedData = await getSupplyChainState();
+      setSupplyChain(updatedData);
+    } catch (error) {
+      console.error("Error triggering disruption:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to trigger disruption",
+        severity: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGetReasoning = async () => {
+    if (!disruptionType) {
+      setSnackbar({
+        open: true,
+        message: "Please select a disruption type",
+        severity: "error"
+      });
+      return;
+    }
+
+    try {
+      setReasoningLoading(true);
+      const details: Record<string, string | number | undefined> = {};
+      
+      if (disruptionType === "stockout") {
+        details.nodeId = nodeId;
+        details.sku = sku;
+      } else if (disruptionType === "route_closed") {
+        details.routeId = routeId;
+      }
+
+      const result = await getReasoning({
+        disruptionType,
+        details
+      });
+
+      // Pass reasoning result to parent component
+      if (onReasoningResult) {
+        onReasoningResult(result.data);
+      }
+
+      setSnackbar({
+        open: true,
+        message: "AI reasoning generated successfully",
+        severity: "success"
+      });
+    } catch (error) {
+      console.error("Error getting reasoning:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to generate AI reasoning",
+        severity: "error"
+      });
+    } finally {
+      setReasoningLoading(false);
+    }
+  };
+
   return (
     <Paper elevation={1} sx={{ p: 2 }}>
-      <Typography variant="h6">Controls</Typography>
-      {/* TODO: Add disruption/scenario controls here */}
-      <Typography variant="body2" color="text.secondary">
-        (Controls for disruptions and scenario selection will appear here.)
+      <Typography variant="h6" gutterBottom>
+        Supply Chain Controls
       </Typography>
+
+      <FormControl fullWidth margin="normal">
+        <InputLabel>Disruption Type</InputLabel>
+        <Select
+          value={disruptionType}
+          onChange={(e) => setDisruptionType(e.target.value)}
+          label="Disruption Type"
+        >
+          <MenuItem value="stockout">Stockout</MenuItem>
+          <MenuItem value="route_closed">Route Closed</MenuItem>
+        </Select>
+        <FormHelperText>Select the type of disruption to simulate</FormHelperText>
+      </FormControl>
+
+      {disruptionType === "stockout" && (
+        <>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Node</InputLabel>
+            <Select
+              value={nodeId}
+              onChange={(e) => setNodeId(e.target.value)}
+              label="Node"
+            >
+              {supplyChain?.nodes
+                .filter(node => node.type === "retail")
+                .map((node) => (
+                  <MenuItem key={node.id} value={node.id}>
+                    {node.name}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel>SKU</InputLabel>
+            <Select
+              value={sku}
+              onChange={(e) => setSku(e.target.value)}
+              label="SKU"
+            >
+              <MenuItem value="skuA">SKU A</MenuItem>
+            </Select>
+          </FormControl>
+        </>
+      )}
+
+      {disruptionType === "route_closed" && (
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Route</InputLabel>
+          <Select
+            value={routeId}
+            onChange={(e) => setRouteId(e.target.value)}
+            label="Route"
+          >
+            {supplyChain?.routes.map((route) => {
+              const fromNode = supplyChain.nodes.find(n => n.id === route.from)?.name;
+              const toNode = supplyChain.nodes.find(n => n.id === route.to)?.name;
+              return (
+                <MenuItem key={route.id} value={route.id}>
+                  {fromNode} → {toNode}
+                </MenuItem>
+              );
+            })}
+          </Select>
+        </FormControl>
+      )}
+
+      <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
+        <Button
+          variant="contained"
+          onClick={handleTriggerDisruption}
+          disabled={loading || !disruptionType || (disruptionType === "stockout" && (!nodeId || !sku)) || (disruptionType === "route_closed" && !routeId)}
+        >
+          {loading ? <CircularProgress size={24} /> : "Trigger Disruption"}
+        </Button>
+        
+        <Button
+          variant="outlined"
+          onClick={handleGetReasoning}
+          disabled={reasoningLoading || !disruptionType || (disruptionType === "stockout" && (!nodeId || !sku)) || (disruptionType === "route_closed" && !routeId)}
+        >
+          {reasoningLoading ? <CircularProgress size={24} /> : "Get AI Reasoning"}
+        </Button>
+      </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };
