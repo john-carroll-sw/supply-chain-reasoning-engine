@@ -31,16 +31,17 @@ const App: React.FC = () => {
           fontFamily: muiTheme.typography.fontFamily,
         }}
       >
-        <Container maxWidth="xl" sx={{ pt: 6 }}>
+        <Container maxWidth="xl" sx={{ pt: 6, height: "calc(100vh - 40px)", display: "flex", flexDirection: "column" }}>
           <Typography variant="h4" gutterBottom sx={{ color: "primary.main", mb: 4 }}>
             Supply Chain Reasoning Demo
           </Typography>
-          <Box sx={{ display: "flex", gap: 4, alignItems: "flex-start" }}>
-            <Box sx={{ flex: 2, minWidth: 700 }}>
+          <Box sx={{ display: "flex", gap: 4, flexGrow: 1, overflow: "hidden" }}>
+            <Box sx={{ flex: 2, minWidth: 700, display: "flex", flexDirection: "column", overflow: "auto" }}>
               <Paper
                 elevation={4}
                 sx={{
-                  height: "60vh",
+                  flex: 1,
+                  minHeight: "400px", 
                   p: 0,
                   overflow: "hidden",
                   background: "linear-gradient(135deg, #23262F 60%, #23262F 100%)",
@@ -55,9 +56,9 @@ const App: React.FC = () => {
                 <DisruptionsTable refreshKey={mapRefreshKey} />
               </Paper>
             </Box>
-            <Box sx={{ flex: 1.5, minWidth: 420, display: "flex", flexDirection: "column", gap: 3, height: '80vh' }}>
+            <Box sx={{ flex: 1.5, minWidth: 420, display: "flex", flexDirection: "column", gap: 3, overflow: "auto" }}>
               <ControlsPanel onReasoningResult={handleReasoningResult} onStateChange={handleStateChange} />
-              <Paper elevation={2} sx={{ p: 3, flex: 1, minHeight: '40vh', maxHeight: '100%', overflow: "auto", display: 'flex', flexDirection: 'column' }}>
+              <Paper elevation={2} sx={{ p: 3, flex: 1, minHeight: '40vh', overflow: "auto", display: 'flex', flexDirection: 'column' }}>
                 <ReasoningPanel reasoning={reasoningResult} />
               </Paper>
             </Box>
