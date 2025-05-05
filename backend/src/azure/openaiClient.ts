@@ -27,9 +27,9 @@ export async function reasonAboutDisruption(
       __dirname + "/../../prompts/reason_about_disruption.md",
       "utf-8"
     );
-    // console.log("[Azure OpenAI system message]", systemMessage);
+    console.log("[Azure OpenAI system message]", systemMessage);
     const userMessage = `\nSupply Chain Disruption: ${disruptionType}\n\nCurrent Supply Chain State:\n${JSON.stringify(currentState, null, 2)}\n\nDisruption Details:\n${JSON.stringify(disruptionDetails, null, 2)}\n\nPlease analyze this situation and provide:\n1. Step-by-step reasoning about the impact\n2. 2-3 specific recommendations with clear actions\n`;
-    // console.log("[Azure OpenAI user message]", userMessage);
+    console.log("[Azure OpenAI user message]", userMessage);
     const response = await AzureOpenAIClient.chat.completions.create({
       messages: [
         { role: "system", content: systemMessage },
