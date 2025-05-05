@@ -6,6 +6,7 @@ import ReasoningPanel from "./components/ReasoningPanel";
 import NodeSummaryTable from "./components/NodeSummaryTable";
 import type { ReasoningResponse } from "./types/supplyChain";
 import { muiTheme } from "./theme/muiTheme";
+import DisruptionsTable from "./components/DisruptionsTable";
 
 const App: React.FC = () => {
   const [reasoningResult, setReasoningResult] = useState<ReasoningResponse | undefined>(undefined);
@@ -50,10 +51,13 @@ const App: React.FC = () => {
               <Paper elevation={2} sx={{ mt: 4, p: 2 }}>
                 <NodeSummaryTable />
               </Paper>
+              <Paper elevation={2} sx={{ mt: 4, p: 2 }}>
+                <DisruptionsTable refreshKey={mapRefreshKey} />
+              </Paper>
             </Box>
-            <Box sx={{ flex: 1, minWidth: 380, display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box sx={{ flex: 1.5, minWidth: 420, display: "flex", flexDirection: "column", gap: 3, height: '80vh' }}>
               <ControlsPanel onReasoningResult={handleReasoningResult} onStateChange={handleStateChange} />
-              <Paper elevation={2} sx={{ p: 3, minHeight: "32vh", maxHeight: "40vh", overflow: "auto" }}>
+              <Paper elevation={2} sx={{ p: 3, flex: 1, minHeight: '40vh', maxHeight: '100%', overflow: "auto", display: 'flex', flexDirection: 'column' }}>
                 <ReasoningPanel reasoning={reasoningResult} />
               </Paper>
             </Box>

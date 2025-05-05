@@ -3,7 +3,7 @@ import { Typography, Box, Divider, Card, CardContent, Chip, Paper } from "@mui/m
 import type { ReasoningResponse } from "../types/supplyChain";
 
 interface ReasoningPanelProps {
-  reasoning: ReasoningResponse | undefined;
+  reasoning?: ReasoningResponse;
 }
 
 const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ reasoning }) => {
