@@ -61,17 +61,17 @@ const NodeSummaryTable: React.FC = () => {
 
   return (
     <Box>
-      <Box display="flex" alignItems="center" justifyContent="space-between">
-        <Typography variant="h6" gutterBottom>
-          Node Summary Table
-        </Typography>
-        <Tooltip title={`Sort: ${sortDirection === 'asc' ? 'Ascending' : 'Descending'}`}>
-          <IconButton onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}>
-            <SortIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
       <TableContainer component={Paper} sx={{ background: '#23262F', color: '#F4F4F4' }}>
+        <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ px: 2, pt: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Node Summary
+          </Typography>
+          <Tooltip title={`Sort: ${sortDirection === 'asc' ? 'Ascending' : 'Descending'}`}>
+            <IconButton onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}>
+              <SortIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
         <Table size="small">
           <TableHead>
             <TableRow>
