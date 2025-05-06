@@ -95,6 +95,9 @@ When designing a demo for enterprise-scale supply chain reasoning, it's importan
   - Show a handful of ships, factories, and destination ports.
   - Example: 5-10 ships, 10-20 ports, 3-5 major disruptions (canal blocked, port closed, storm).
 
+- **Air Cargo/Airplanes:**
+  - 2-5 airplanes connecting major airports (e.g., Shanghai, Frankfurt, Chicago, Dubai). Use for expedited shipments or as a disruption mitigation option. Visualize air routes and airport nodes on the map.
+
 - **Trucks, Factories, Retail (Land-based):**
   - Use a regional or national map (e.g., US, EU, China).
   - Show 3-5 factories, 5-10 DCs, 10-20 retail nodes.
@@ -126,13 +129,13 @@ When designing a demo for enterprise-scale supply chain reasoning, it's importan
 
 - **Global for ships, regional for trucks/retail.**
 - **~20-50 nodes total** (factories, DCs, ports, retail).
-- **5-10 ships, 10-20 trucks.**
-- **2-3 major disruptions** (canal, port, highway).
+- **5-10 ships, 10-20 trucks, 2-5 airplanes.**
+- **2-3 major disruptions** (canal, port, highway, airport).
 - **Clear, visual impact** of disruptions and AI recommendations.
 
 **Summary:**
 
-- Use a global map for maritime, regional for land.
+- Use a global map for maritime and air cargo, regional for land.
 - 20-50 nodes, 10-30 assets is “just right” for demo.
 - Simulate Suez Canal block by closing that route and asking the AI for rerouting/mitigation strategies.
 - Show how disruptions cascade through the network and how the AI helps recover.
