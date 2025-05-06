@@ -174,10 +174,9 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
 
   return (
     <Paper elevation={1} sx={{ p: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Supply Chain Controls
+      <Typography variant="subtitle1" gutterBottom>
+        Simulate disruptions and get AI reasoning
       </Typography>
-
       <FormControl fullWidth margin="normal">
         <InputLabel>Disruption Type</InputLabel>
         <Select
