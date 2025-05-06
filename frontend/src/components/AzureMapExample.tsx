@@ -26,7 +26,7 @@ const markerPositions = [
   [-122.4098, 37.8024],  // Fisherman's Wharf
 ];
 
-const AzureMapRoute: React.FC = () => (
+const AzureMapExample: React.FC = () => (
   <AzureMapsProvider>
     <AzureMap
       options={mapOptions}
@@ -53,4 +53,4 @@ const AzureMapRoute: React.FC = () => (
   </AzureMapsProvider>
 );
 
-export default AzureMapRoute;
+export default AzureMapExample;

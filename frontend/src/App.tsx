@@ -6,7 +6,7 @@ import NodeSummaryTable from "./components/NodeSummaryTable";
 import type { ReasoningResponse } from "./types/supplyChain";
 import { muiTheme } from "./theme/muiTheme";
 import DisruptionsTable from "./components/DisruptionsTable";
-import AzureMapRoute from "./components/AzureMapRoute";
+import AzureMapExample from "./components/AzureMapExample";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
@@ -115,7 +115,7 @@ const App: React.FC = () => {
                   background: "linear-gradient(135deg, #23262F 60%, #23262F 100%)",
                 }}
               >
-                <AzureMapRoute />
+                <AzureMapExample />
               </Paper>
               <Paper elevation={2} sx={{ p: 3, minHeight: "32vh", overflow: "auto", display: "flex", flexDirection: "column" }}>
                 <ReasoningPanel reasoning={reasoningResult} />
