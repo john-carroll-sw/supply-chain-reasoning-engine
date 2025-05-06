@@ -6,14 +6,24 @@ import NodeSummaryTable from "./components/NodeSummaryTable";
 import type { ReasoningResponse } from "./types/supplyChain";
 import { muiTheme } from "./theme/muiTheme";
 import DisruptionsTable from "./components/DisruptionsTable";
-import AzureMapExample from "./components/AzureMapExample";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import AzureMapView from "./components/AzureMapView";
 
 const App: React.FC = () => {
   const [reasoningResult, setReasoningResult] = useState<ReasoningResponse | undefined>(undefined);
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+
+  const getDefaultMapPanelHeight = (hasRecommendations: boolean) => {
+    if (hasRecommendations) {
+      return window.innerHeight * 0.35; // Map smaller if recommendations
+    }
+    return window.innerHeight * 0.6; // Map bigger by default
+  };
+
+  const [mapPanelHeight, setMapPanelHeight] = useState(getDefaultMapPanelHeight(!!reasoningResult?.recommendations?.length));
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleReasoningResult = (result: ReasoningResponse | undefined) => {
     setReasoningResult(result);
@@ -22,6 +32,28 @@ const App: React.FC = () => {
   const handleStateChange = () => {
     setMapRefreshKey((k) => k + 1);
   };
+
+  const handleMouseDown = () => {
+    setIsDragging(true);
+  };
+
+  React.useEffect(() => {
+    if (!isDragging) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const containerTop = document.getElementById('main-map-container')?.getBoundingClientRect().top || 0;
+      const newHeight = e.clientY - containerTop;
+      if (newHeight > 100 && newHeight < window.innerHeight - 200) {
+        setMapPanelHeight(newHeight);
+      }
+    };
+    const handleMouseUp = () => setIsDragging(false);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
 
   return (
     <ThemeProvider theme={muiTheme}>
@@ -91,33 +123,36 @@ const App: React.FC = () => {
               </Box>
             </Box>
             {/* Main: Map and Recommendations stacked vertically */}
-            <Box sx={{ flex: 2, minWidth: 700, display: "flex", flexDirection: "column", gap: 4, overflow: "auto" }}>
-              {/* <Paper
+            <Box sx={{ flex: 2, minWidth: 700, display: "flex", flexDirection: "column", gap: 0, overflow: "auto", height: "100%", minHeight: 0 }}>
+              <Paper
+                id="main-map-container"
                 elevation={4}
                 sx={{
-                  minHeight: "400px",
+                  height: mapPanelHeight,
+                  minHeight: 100,
+                  maxHeight: '80vh',
                   p: 0,
                   overflow: "hidden",
                   background: "linear-gradient(135deg, #23262F 60%, #23262F 100%)",
+                  transition: "height 0.2s",
+                  position: "relative",
                 }}
               >
                 <AzureMapView />
-              </Paper> */}
-              {/* Add the route map below for testing */}
-              <Paper
-                elevation={4}
-                sx={{
-                  minHeight: "400px",
-                  height: "100%",
-                  flex: 1,
-                  p: 0,
-                  overflow: "hidden",
-                  background: "linear-gradient(135deg, #23262F 60%, #23262F 100%)",
-                }}
-              >
-                <AzureMapExample />
               </Paper>
-              <Paper elevation={2} sx={{ p: 3, minHeight: "32vh", overflow: "auto", display: "flex", flexDirection: "column" }}>
+              <div
+                className="draggable-divider"
+                onMouseDown={handleMouseDown}
+              />
+              <Paper elevation={2} sx={{
+                p: 3,
+                minHeight: "32vh",
+                height: `calc(100% - ${mapPanelHeight + 12}px)`,
+                overflow: "auto",
+                display: "flex",
+                flexDirection: "column",
+                transition: "height 0.2s",
+              }}>
                 <ReasoningPanel reasoning={reasoningResult} />
               </Paper>
             </Box>
