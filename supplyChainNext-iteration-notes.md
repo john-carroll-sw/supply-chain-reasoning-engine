@@ -79,3 +79,60 @@ _This file is a living document for brainstorming and tracking the evolution of 
 - Update your frontend to visualize the new model (start with just factories, DCs, retails, trucks, and routes).
 - Add event logging and a simple reward calculation.
 - Iterate: Add more complexity (demand, orders, disruptions, new asset types, etc.).
+
+---
+
+## Choosing the Right Scale for Enterprise Supply Chain Demos
+
+When designing a demo for enterprise-scale supply chain reasoning, it's important to balance realism, complexity, and clarity. Here are guidelines and best practices:
+
+### Recommended Globe/Map Scale
+
+- **Maritime/Cargo Ship Demo (e.g., Suez Canal Blocked):**
+  - Use a global or intercontinental map (e.g., North America, Europe, Asia, Middle East).
+  - Show major ports (Shanghai, Rotterdam, LA, NY, Singapore, Dubai, etc.).
+  - Include key maritime routes (Suez Canal, Panama Canal, Cape of Good Hope, etc.).
+  - Show a handful of ships, factories, and destination ports.
+  - Example: 5-10 ships, 10-20 ports, 3-5 major disruptions (canal blocked, port closed, storm).
+
+- **Trucks, Factories, Retail (Land-based):**
+  - Use a regional or national map (e.g., US, EU, China).
+  - Show 3-5 factories, 5-10 DCs, 10-20 retail nodes.
+  - 10-20 trucks moving between nodes.
+  - Simulate disruptions like highway closures, factory shutdowns, or DC stockouts.
+
+- **Combined Demo:**
+  - Show a global map, but focus on a few “lanes” (e.g., Shanghai → Suez → Rotterdam → Berlin retail).
+  - Let users zoom in to see truck/retail detail in a region (e.g., Europe or US).
+  - Simulate a Suez Canal block and show how it ripples through the network (rerouting ships, delayed trucks, stockouts at retail).
+
+### How to Get AI Reasoning for Suez Canal Blockage
+
+1. **State Representation:**
+   - Mark the Suez Canal route as “closed” in your routes data.
+   - Show affected ships, ports, and downstream nodes.
+
+2. **AI Reasoning Prompt:**
+   - “The Suez Canal is blocked. Ship X carrying SKU Y is delayed. What are the best options to minimize impact on European retail stores?”
+   - Pass the current state (including the disruption) to your reasoning engine.
+
+3. **Expected AI Recommendations:**
+   - Reroute ships via Cape of Good Hope (longer, more expensive).
+   - Expedite air freight for critical SKUs.
+   - Rebalance inventory from US or other unaffected regions.
+   - Prioritize high-value or perishable goods for alternate transport.
+
+### Demo Value Sweet Spot
+
+- **Global for ships, regional for trucks/retail.**
+- **~20-50 nodes total** (factories, DCs, ports, retail).
+- **5-10 ships, 10-20 trucks.**
+- **2-3 major disruptions** (canal, port, highway).
+- **Clear, visual impact** of disruptions and AI recommendations.
+
+**Summary:**
+
+- Use a global map for maritime, regional for land.
+- 20-50 nodes, 10-30 assets is “just right” for demo.
+- Simulate Suez Canal block by closing that route and asking the AI for rerouting/mitigation strategies.
+- Show how disruptions cascade through the network and how the AI helps recover.
