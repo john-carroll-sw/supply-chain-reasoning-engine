@@ -1,5 +1,5 @@
 import React from "react";
-import { AzureMap, AzureMapHtmlMarker, AzureMapsProvider } from "react-azure-maps";
+import { AzureMap, AzureMapHtmlMarker, AzureMapsProvider, type ControlOptions } from "react-azure-maps";
 import { AuthenticationType } from "azure-maps-control";
 
 const mapOptions = {
@@ -10,6 +10,7 @@ const mapOptions = {
   center: [-122.4194, 37.7749],
   zoom: 11,
   view: "Auto",
+  style: "grayscale_light",
 };
 
 const markerPositions = [
@@ -27,7 +28,17 @@ const markerPositions = [
 
 const AzureMapRoute: React.FC = () => (
   <AzureMapsProvider>
-    <AzureMap options={mapOptions} styles={{ height: "100%", width: "100%", borderRadius: 8 }}>
+    <AzureMap
+      options={mapOptions}
+      styles={{ height: "100%", width: "100%", borderRadius: 8 }}
+      controls={[
+        { controlName: "ZoomControl", options: { position: "top-right" } as ControlOptions },
+        { controlName: "CompassControl", options: { position: "top-right" } as ControlOptions },
+        { controlName: "PitchControl", options: { position: "top-right" } as ControlOptions },
+        { controlName: "StyleControl", options: { position: "top-left" } as ControlOptions },
+        { controlName: "FullscreenControl", options: { position: "top-left" } as ControlOptions }
+      ]}
+    >
       {markerPositions.map((position, idx) => (
         <AzureMapHtmlMarker
           key={`html-marker-${idx}`}
