@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { supplyChain } from '../data/supplyChain';
-import { reasonAboutDisruption } from '../azure/openaiClient';
+import { reasonAboutDisruption } from '../azure/azureOpenAIClient';
 
 /**
  * POST /api/reason

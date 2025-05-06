@@ -22,25 +22,29 @@ export async function reasonAboutDisruption(
   recommendations: Array<{ title: string; description: string }>;
 }> {
   try {
-    // Load the system prompt from file
+    // Load the system and user prompts from file
     const systemMessage = await fs.readFile(
-      __dirname + "/../../prompts/reason_about_disruption.md",
+      __dirname + "/../../prompts/reason_about_disruption.system.md",
+      "utf-8"
+    );
+    const userMessage = await fs.readFile(
+      __dirname + "/../../prompts/reason_about_disruption.user.md",
       "utf-8"
     );
     console.log("[Azure OpenAI system message]", systemMessage);
-    const userMessage = `\nSupply Chain Disruption: ${disruptionType}\n\nCurrent Supply Chain State:\n${JSON.stringify(currentState, null, 2)}\n\nDisruption Details:\n${JSON.stringify(disruptionDetails, null, 2)}\n\nPlease analyze this situation and provide:\n1. Step-by-step reasoning about the impact\n2. 2-3 specific recommendations with clear actions\n`;
     console.log("[Azure OpenAI user message]", userMessage);
     const response = await AzureOpenAIClient.chat.completions.create({
       messages: [
         { role: "system", content: systemMessage },
-        { role: "user", content: userMessage }
+        { role: "user", content: userMessage.replace("{{disruptionType}}", disruptionType)
+          .replace("{{currentState}}", JSON.stringify(currentState, null, 2))
+          .replace("{{disruptionDetails}}", JSON.stringify(disruptionDetails, null, 2))
+        }
       ],
       max_completion_tokens: 10000,
       model: modelName
     });
 
-
-    
     if (!response.choices || response.choices.length === 0) {
         throw new Error("No response from Azure OpenAI");
     }
