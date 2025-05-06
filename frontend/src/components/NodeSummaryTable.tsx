@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box, TableSortLabel } from "@mui/material";
+import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box, TableSortLabel, Tooltip, IconButton } from "@mui/material";
 import type { SupplyChainNode, SupplyChainState } from "../types/supplyChain";
 import { getSupplyChainState } from "../api/supplyChainApi";
+import SortIcon from '@mui/icons-material/Sort';
 
 const formatNodeType = (type: string): string => {
   switch (type) {
@@ -60,9 +61,16 @@ const NodeSummaryTable: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h6" gutterBottom>
-        Node Summary Table
-      </Typography>
+      <Box display="flex" alignItems="center" justifyContent="space-between">
+        <Typography variant="h6" gutterBottom>
+          Node Summary Table
+        </Typography>
+        <Tooltip title={`Sort: ${sortDirection === 'asc' ? 'Ascending' : 'Descending'}`}>
+          <IconButton onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}>
+            <SortIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
       <TableContainer component={Paper} sx={{ background: '#23262F', color: '#F4F4F4' }}>
         <Table size="small">
           <TableHead>

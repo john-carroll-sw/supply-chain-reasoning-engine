@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { CssBaseline, Container, Box, Paper, Typography, ThemeProvider } from "@mui/material";
-import MapView from "./components/MapView";
+import AzureMapView from "./components/AzureMapView";
 import ControlsPanel from "./components/ControlsPanel";
 import ReasoningPanel from "./components/ReasoningPanel";
 import NodeSummaryTable from "./components/NodeSummaryTable";
@@ -47,7 +47,7 @@ const App: React.FC = () => {
                   background: "linear-gradient(135deg, #23262F 60%, #23262F 100%)",
                 }}
               >
-                <MapView key={mapRefreshKey} />
+                <AzureMapView />
               </Paper>
               <Paper elevation={2} sx={{ mt: 4, p: 2 }}>
                 <NodeSummaryTable />
