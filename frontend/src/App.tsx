@@ -101,7 +101,7 @@ const App: React.FC = () => {
                   borderRadius: '8px 0 0 8px', // Only left corners rounded
                 }}>
                   <ControlsPanel onReasoningResult={handleReasoningResult} onStateChange={handleStateChange} />
-                  <NodeSummaryTable />
+                  <NodeSummaryTable refreshKey={mapRefreshKey} />
                   <DisruptionsTable refreshKey={mapRefreshKey} />
                 </Paper>
               </Collapse>

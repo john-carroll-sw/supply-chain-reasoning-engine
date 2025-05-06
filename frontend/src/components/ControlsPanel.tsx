@@ -217,7 +217,15 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
               onChange={(e) => setSku(e.target.value)}
               label="SKU"
             >
-              <MenuItem value="skuA">SKU A</MenuItem>
+              {supplyChain?.nodes.find(node => node.id === nodeId)
+                ? Object.entries(supplyChain.nodes.find(node => node.id === nodeId)!.inventory)
+                    .filter(entry => entry[1] > 0)
+                    .map(([key]) => (
+                      <MenuItem key={key} value={key}>
+                        {key.toUpperCase()}
+                      </MenuItem>
+                    ))
+                : null}
             </Select>
           </FormControl>
         </>

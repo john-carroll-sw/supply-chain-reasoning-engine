@@ -17,7 +17,11 @@ const formatNodeType = (type: string): string => {
   }
 };
 
-const NodeSummaryTable: React.FC = () => {
+interface NodeSummaryTableProps {
+  refreshKey: number;
+}
+
+const NodeSummaryTable: React.FC<NodeSummaryTableProps> = ({ refreshKey }) => {
   const [nodes, setNodes] = useState<SupplyChainNode[]>([]);
   const [skus, setSkus] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>('name');
@@ -35,7 +39,7 @@ const NodeSummaryTable: React.FC = () => {
       setSkus(Array.from(skuSet));
     };
     fetchData();
-  }, []);
+  }, [refreshKey]);
 
   const handleSort = (column: string) => {
     if (sortBy === column) {
