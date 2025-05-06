@@ -68,17 +68,29 @@ button:focus-visible {
 }
 
 .draggable-divider {
-  height: 20px;
-  cursor: row-resize;
-  /* background: linear-gradient(90deg, #23262F 60%, #181A20 100%); */
-  background: transparent;
-  opacity: 0.5;
+  height: 24px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #181A20;
+  border-radius: 8px;
+  margin: 0 0 0 0;
+  opacity: 0.85;
   border: none;
-  border-radius: 4px;
+  cursor: grab;
   transition: opacity 0.2s, background 0.2s;
-  /* user-select: none; */
 }
-.draggable-divider:hover {
-  opacity: 0.9;
-  /* background: linear-gradient(90deg, #23262F 80%, #00FFD0 100%); */
+/* .draggable-divider:hover {
+  opacity: 1;
+  background: #23262F;
+} */
+.draggable-divider::before {
+  content: "";
+  display: block;
+  width: 48px;
+  height: 6px;
+  border-radius: 3px;
+  background: #A0A0A0;
+  opacity: 0.7;
 }
