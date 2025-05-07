@@ -33,7 +33,7 @@ export async function callOpenAIChat(messages: any[], responseSchema?: z.ZodType
     messages,
     max_completion_tokens: 10000,
     model: modelName,
-    temperature: 0.1,
+    // reasoning_effort: "high",
   };
 
   if (responseSchema) {
