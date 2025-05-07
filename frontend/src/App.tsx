@@ -13,7 +13,7 @@ import AzureMapView from "./components/AzureMapView";
 const App: React.FC = () => {
   const [reasoningResult, setReasoningResult] = useState<ReasoningResponse | undefined>(undefined);
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const getDefaultMapPanelHeight = (hasRecommendations: boolean) => {
     if (hasRecommendations) {

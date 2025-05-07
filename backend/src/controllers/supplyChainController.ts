@@ -68,7 +68,33 @@ function detectDisruptions(state: SupplyChainStateV1, closedBridges: string[]): 
 // GET /api/supplychain
 export const getSupplyChain = (req: Request, res: Response): void => {
   const disruptions = detectDisruptions(currentSupplyChain, closedBridges);
-  res.json({ ...currentSupplyChain, closedBridges, disruptions });
+
+  // Compute flat nodes array for frontend compatibility
+  const nodes = [
+    ...currentSupplyChain.factories.map(f => ({
+      id: f.id,
+      name: f.name,
+      type: 'factory',
+      inventory: Object.fromEntries(f.inventory.map(item => [item.skuId, item.quantity])),
+      location: f.location
+    })),
+    ...currentSupplyChain.distributionCenters.map(dc => ({
+      id: dc.id,
+      name: dc.name,
+      type: 'distribution_center',
+      inventory: Object.fromEntries(dc.inventory.map(item => [item.skuId, item.quantity])),
+      location: dc.location
+    })),
+    ...currentSupplyChain.retails.map(r => ({
+      id: r.id,
+      name: r.name,
+      type: 'retail',
+      inventory: Object.fromEntries(r.inventory.map(item => [item.skuId, item.quantity])),
+      location: r.location
+    }))
+  ];
+
+  res.json({ ...currentSupplyChain, closedBridges, disruptions, nodes });
 };
 
 // POST /api/supplychain/disrupt
