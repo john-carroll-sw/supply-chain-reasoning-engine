@@ -50,27 +50,21 @@ const AzureMapView: React.FC = () => {
     // Load Azure Maps SDK and our vanilla JS logic, then initialize
     async function setupMap() {
       try {
-        // Load the CSS first (do not await, just inject)
-        loadScript('https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css');
-        // Load the Azure Maps SDK (await)
-        await loadScript('https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js');
-        // Load our custom map implementation (await)
-        await loadScript('/azureMapVanilla.js');
+      // Load the CSS first (do not await, just inject)
+      loadScript('https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css');
+      // Load the Azure Maps SDK (await)
+      await loadScript('https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js');
+      // Load our custom map implementation (await)
+      await loadScript('/azureMapVanilla.js');
 
-        // Retry logic: wait for window.initAzureMap and mapDivRef.current to be defined
-        let retries = 10;
-        while ((!window.initAzureMap || !mapDivRef.current) && retries > 0) {
-          await new Promise(res => setTimeout(res, 100));
-          retries--;
-        }
-
-        if (window.initAzureMap && mapDivRef.current) {
-          window.initAzureMap(mapDivRef.current);
-        } else {
-          console.error('Azure Maps initialization failed: Missing initAzureMap function or map container');
-        }
+      // Initialize the map if the function and container are available
+      if (window.initAzureMap && mapDivRef.current) {
+        window.initAzureMap(mapDivRef.current);
+      } else {
+        console.error('Azure Maps initialization failed: Missing initAzureMap function or map container');
+      }
       } catch (error) {
-        console.error('Failed to load Azure Maps resources:', error);
+      console.error('Failed to load Azure Maps resources:', error);
       }
     }
     
