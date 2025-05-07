@@ -1,82 +1,97 @@
-import React, { useEffect, useState } from "react";
-import { AzureMap, AzureMapHtmlMarker, AzureMapsProvider, type ControlOptions } from "react-azure-maps";
-import { AuthenticationType } from "azure-maps-control";
-import "./MapView.css"; // Import the custom CSS with forced-colors-mode fixes
-import { getSupplyChainState } from "../api/supplyChainApi";
-import type { SupplyChainNode } from "../types/supplyChain";
+import React, { useEffect, useRef } from 'react';
+import './MapView.css';
 
-// Create a custom stylesheet to handle forced-colors-mode
-const forcedColorsStylesheet = document.createElement('style');
-forcedColorsStylesheet.innerHTML = `
-  @media (forced-colors: active) {
-    .azure-map-control {
-      forced-color-adjust: auto;
-    }
+// Add TypeScript declaration for the global function
+declare global {
+  interface Window {
+    initAzureMap: (container: HTMLDivElement) => void;
+    AZURE_MAPS_KEY: string;
+    resizeMap: () => void;
   }
-`;
-document.head.appendChild(forcedColorsStylesheet);
-
-const mapOptions = {
-  authOptions: {
-    authType: AuthenticationType.subscriptionKey,
-    subscriptionKey: import.meta.env.VITE_AZURE_MAPS_KEY,
-  },
-  center: [0, 20], // Center over the world (longitude, latitude)
-  zoom: 1.5,       // Zoomed out for a global view
-  view: "Auto",
-  style: "grayscale_light",
-  // Add support for forced colors mode
-  renderOptions: {
-    preserveDrawingBuffer: true,
-    forcedColorSchemeAware: true,
-  }
-};
+}
 
 const AzureMapView: React.FC = () => {
-  const [nodes, setNodes] = useState<SupplyChainNode[]>([]);
+  const mapDivRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchNodes = async () => {
+    // Inject the API key into the window object for the vanilla JS file to use
+    window.AZURE_MAPS_KEY = import.meta.env.VITE_AZURE_MAPS_KEY as string;
+
+    // Helper to load a script only once
+    function loadScript(src: string): Promise<void> {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+          resolve();
+          return;
+        }
+        
+        // For CSS files, create link element instead of script
+        if (src.endsWith('.css')) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = src;
+          link.onload = () => resolve();
+          link.onerror = () => reject();
+          document.head.appendChild(link);
+          return;
+        }
+        
+        // For JS files, create script element
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject();
+        document.body.appendChild(script);
+      });
+    }
+
+    // Load Azure Maps SDK and our vanilla JS logic, then initialize
+    async function setupMap() {
       try {
-        const state = await getSupplyChainState();
-        setNodes(state.nodes);
-      } catch {
-        // Optionally handle error
+        // Load the CSS first
+        await loadScript('https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css');
+        // Load the Azure Maps SDK
+        await loadScript('https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js');
+        // Load our custom map implementation
+        await loadScript('/azureMapVanilla.js');
+        
+        // Initialize the map if everything loaded correctly
+        if (window.initAzureMap && mapDivRef.current) {
+          window.initAzureMap(mapDivRef.current);
+        } else {
+          console.error('Azure Maps initialization failed: Missing initAzureMap function or map container');
+        }
+      } catch (error) {
+        console.error('Failed to load Azure Maps resources:', error);
       }
+    }
+    
+    setupMap();
+
+    // Handle container resizing
+    const resizeObserver = new ResizeObserver(() => {
+      if (window.resizeMap) {
+        window.resizeMap();
+      }
+    });
+    
+    if (mapDivRef.current) {
+      resizeObserver.observe(mapDivRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
     };
-    fetchNodes();
   }, []);
 
   return (
-    <AzureMapsProvider>
-      <AzureMap
-        options={mapOptions}
-        styles={{ height: "100%", width: "100%", borderRadius: 8 }}
-        controls={[
-          { controlName: "ZoomControl", options: { position: "top-right" } as ControlOptions },
-          { controlName: "CompassControl", options: { position: "top-right" } as ControlOptions },
-          { controlName: "PitchControl", options: { position: "top-right" } as ControlOptions },
-          { controlName: "StyleControl", options: { position: "top-left" } as ControlOptions },
-          { controlName: "FullscreenControl", options: { position: "top-left" } as ControlOptions }
-        ]}
-      >
-        {nodes.map((node) => (
-          <AzureMapHtmlMarker
-            key={node.id}
-            options={{
-              color:
-                node.type === "factory"
-                  ? "#1976d2"
-                  : node.type === "distribution_center"
-                  ? "#43a047"
-                  : "#fbc02d",
-              text: node.name,
-              position: [node.location.lng, node.location.lat],
-            }}
-          />
-        ))}
-      </AzureMap>
-    </AzureMapsProvider>
+    <div
+      ref={mapDivRef}
+      id="myMap"
+      className="azure-map-container"
+      aria-label="Azure Map"
+    />
   );
 };
 

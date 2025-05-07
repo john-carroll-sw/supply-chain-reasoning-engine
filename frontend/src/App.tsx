@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CssBaseline, Container, Box, Paper, Typography, ThemeProvider, IconButton, Collapse } from "@mui/material";
 import ControlsPanel from "./components/ControlsPanel";
 import ReasoningPanel from "./components/ReasoningPanel";
@@ -19,11 +19,24 @@ const App: React.FC = () => {
     if (hasRecommendations) {
       return window.innerHeight * 0.35; // Map smaller if recommendations
     }
-    return window.innerHeight * 0.9; // Map bigger by default
+    return window.innerHeight * 0.7; // Map bigger by default
   };
 
   const [mapPanelHeight, setMapPanelHeight] = useState(getDefaultMapPanelHeight(!!reasoningResult?.recommendations?.length));
   const [isDragging, setIsDragging] = useState(false);
+
+  // Resize map when mapPanelHeight changes
+  useEffect(() => {
+    if (window.resizeMap) {
+      window.resizeMap();
+    }
+  }, [mapPanelHeight]);
+
+  // Handle reasoning results
+  useEffect(() => {
+    // Adjust map panel height based on whether recommendations are showing
+    setMapPanelHeight(getDefaultMapPanelHeight(!!reasoningResult?.recommendations?.length));
+  }, [reasoningResult]);
 
   const handleReasoningResult = (result: ReasoningResponse | undefined) => {
     setReasoningResult(result);
@@ -31,6 +44,12 @@ const App: React.FC = () => {
 
   const handleStateChange = () => {
     setMapRefreshKey((k) => k + 1);
+    // Trigger a map resize after a short delay to ensure the DOM has updated
+    setTimeout(() => {
+      if (window.resizeMap) {
+        window.resizeMap();
+      }
+    }, 100);
   };
 
   const handleMouseDown = () => {
@@ -115,7 +134,15 @@ const App: React.FC = () => {
                 }}
               >
                 <IconButton
-                  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                  onClick={() => {
+                    setIsSidebarCollapsed(!isSidebarCollapsed);
+                    // Trigger map resize after sidebar animation completes
+                    setTimeout(() => {
+                      if (window.resizeMap) {
+                        window.resizeMap();
+                      }
+                    }, 350);  // slightly longer than the transition duration
+                  }}
                   sx={{ color: "white" }}
                 >
                   {isSidebarCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
