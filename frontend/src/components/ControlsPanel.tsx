@@ -17,7 +17,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
   const [disruptionType, setDisruptionType] = useState<string>("");
   const [nodeId, setNodeId] = useState<string>("");
   const [routeId, setRouteId] = useState<string>("");
-  const [sku, setSku] = useState<string>("skuA");
+  const [sku, setSku] = useState<string>(""); // Changed from "skuA" to empty string
   const [bridgeId, setBridgeId] = useState<string>("");
   const [optimizationPriority, setOptimizationPriority] = useState<string>("cost");
   const [loading, setLoading] = useState<boolean>(false);
@@ -56,6 +56,30 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
       setRouteId("");
     }
   }, [disruptionType]);
+
+  // Compute available SKUs for the selected node
+  const availableSkus = React.useMemo(() => {
+    if (disruptionType === "stockout" && nodeId && supplyChain) {
+      const node = supplyChain.nodes.find(n => n.id === nodeId);
+      if (node) {
+        return Object.entries(node.inventory)
+          .filter(entry => entry[1] > 0)
+          .map(([key]) => key);
+      }
+    }
+    return [];
+  }, [disruptionType, nodeId, supplyChain]);
+
+  // Ensure SKU value is always valid for Select
+  useEffect(() => {
+    if (disruptionType === "stockout") {
+      if (availableSkus.length === 0) {
+        setSku("");
+      } else if (!availableSkus.includes(sku)) {
+        setSku(availableSkus[0]);
+      }
+    }
+  }, [disruptionType, nodeId, availableSkus, sku]);
 
   const handleTriggerDisruption = async () => {
     if (!disruptionType) {
@@ -233,15 +257,11 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
               onChange={(e) => setSku(e.target.value)}
               label="SKU"
             >
-              {supplyChain?.nodes.find(node => node.id === nodeId)
-                ? Object.entries(supplyChain.nodes.find(node => node.id === nodeId)!.inventory)
-                    .filter(entry => entry[1] > 0)
-                    .map(([key]) => (
-                      <MenuItem key={key} value={key}>
-                        {key.toUpperCase()}
-                      </MenuItem>
-                    ))
-                : null}
+              {availableSkus.map((key) => (
+                <MenuItem key={key} value={key}>
+                  {key.toUpperCase()}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </>

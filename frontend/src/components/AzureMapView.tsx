@@ -1,6 +1,18 @@
 import React from "react";
 import { AzureMap, AzureMapHtmlMarker, AzureMapsProvider, type ControlOptions } from "react-azure-maps";
 import { AuthenticationType } from "azure-maps-control";
+import "./MapView.css"; // Import the custom CSS with forced-colors-mode fixes
+
+// Create a custom stylesheet to handle forced-colors-mode
+const forcedColorsStylesheet = document.createElement('style');
+forcedColorsStylesheet.innerHTML = `
+  @media (forced-colors: active) {
+    .azure-map-control {
+      forced-color-adjust: auto;
+    }
+  }
+`;
+document.head.appendChild(forcedColorsStylesheet);
 
 const mapOptions = {
   authOptions: {
@@ -11,6 +23,11 @@ const mapOptions = {
   zoom: 11,
   view: "Auto",
   style: "grayscale_light",
+  // Add support for forced colors mode
+  renderOptions: {
+    preserveDrawingBuffer: true,
+    forcedColorSchemeAware: true,
+  }
 };
 
 const markerPositions = [

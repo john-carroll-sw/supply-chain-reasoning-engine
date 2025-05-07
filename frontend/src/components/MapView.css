@@ -117,3 +117,34 @@
   margin-right: 10px;
   display: inline-block;
 }
+
+/* Azure Maps accessibility styles with cross-browser compatibility */
+@media (forced-colors: active) {
+  .azure-map-control, 
+  .atlas-map-canvas,
+  .atlas-map-control,
+  .atlas-draw-control,
+  .atlas-layer {
+    -webkit-appearance: none;
+    appearance: none;
+    /* Using only widely supported properties */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* Suppress geometry warning by limiting vector tile buffer size */
+.atlas-map-canvas {
+  --vector-tile-buffer: 64;
+}
+
+/* Cross-browser compatible contrast handling for Azure Maps elements */
+.azure-map-control *,
+.atlas-map-canvas *,
+.atlas-map-control *,
+.atlas-draw-control *,
+.atlas-layer * {
+  /* Using only widely supported properties */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
