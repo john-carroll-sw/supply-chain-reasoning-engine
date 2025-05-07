@@ -1,3 +1,11 @@
+---
+
+Note: Ambitious Features and Version Planning
+
+Many of the ideas in this document (like full digital twin, real-time simulation, optimization, advanced UI, and human-in-the-loop override) are ambitious and more appropriate for a V3 or V4. For a V1 demo, this level of complexity is too much. It's best to focus on a simple, clear core loop and use these advanced notes as a roadmap for future versions.
+
+---
+
 # Supply Chain Next: Iteration Notes
 
 ## Vision
