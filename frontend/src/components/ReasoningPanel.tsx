@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Typography, Box, Divider, Card, CardContent, Chip, Paper } from "@mui/material";
 import type { ReasoningResponse } from "../types/supplyChain";
 
-interface ReasoningPanelProps {
-  reasoning?: ReasoningResponse;
-}
-
-const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ reasoning }) => {
+const DEFAULT_REASONING: ReasoningResponse = {
+  reasoning: `1. No active disruptions are reported, but several high-risk (risk >10%) and high-cost routes exist (f1→dc1: cost 5 000, risk 0.10; f1→dc2: 4 800, 0.12; f1→dc3 via air: 3 000, 0.09).
+2. All DCs and retails currently exceed minimums, so there’s no emergency restock, but ongoing replenishment costs and risk exposures can be optimized.
+3. Factory Chicago (f2) offers lower-cost, lower-risk lanes to all DCs vs. Factory Shanghai (f1):
+   – f2→dc1 (air): 2 000, risk 0.08 vs f1→dc1 (ship) 5 000, 0.10
   if (!reasoning) {
     return (
       <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -59,7 +59,7 @@ const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ reasoning }) => {
                     <Chip 
                       label={`Option ${index + 1}`} 
                       size="small" 
-                      sx={{ mr: 1, bgcolor: index === 0 ? 'primary.main' : 'grey.400', color: 'white' }} 
+                      sx={{ mr: 1, bgcolor: index === 0 ? 'primary.main' : 'grey.400', color: 'grey.900', fontWeight: 600 }} 
                     />
                     <Typography variant="subtitle2">
                       {rec.title}
