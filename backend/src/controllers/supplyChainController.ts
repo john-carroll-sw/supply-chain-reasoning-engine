@@ -7,9 +7,47 @@ const initialSupplyChain: SupplyChainState = JSON.parse(JSON.stringify(supplyCha
 // Track closed bridges in memory
 let closedBridges: string[] = [];
 
+// Utility: Detect disruptions in the current supply chain state
+function detectDisruptions(state: SupplyChainState, closedBridges: string[]): any[] {
+  const disruptions: any[] = [];
+  // Stockouts
+  state.nodes.forEach(node => {
+    Object.entries(node.inventory).forEach(([sku, qty]) => {
+      if (qty === 0) {
+        disruptions.push({
+          type: 'stockout',
+          nodeId: node.id,
+          nodeName: node.name,
+          sku
+        });
+      }
+    });
+  });
+  // Closed routes
+  state.routes.forEach(route => {
+    if (route.status === 'closed') {
+      disruptions.push({
+        type: 'route_closed',
+        routeId: route.id,
+        from: route.from,
+        to: route.to
+      });
+    }
+  });
+  // Closed bridges
+  closedBridges.forEach(bridgeId => {
+    disruptions.push({
+      type: 'bridge_closed',
+      bridgeId
+    });
+  });
+  return disruptions;
+}
+
 // GET /api/supplychain
 export const getSupplyChain = (req: Request, res: Response): void => {
-  res.json({ ...supplyChain, closedBridges });
+  const disruptions = detectDisruptions(supplyChain, closedBridges);
+  res.json({ ...supplyChain, closedBridges, disruptions });
 };
 
 // POST /api/supplychain/disrupt
@@ -53,3 +91,6 @@ export const resetSupplyChain = (req: Request, res: Response): void => {
   closedBridges = [];
   res.json({ status: "ok", message: "Supply chain state reset to initial demo data." });
 };
+
+// Export detectDisruptions and closedBridges for use in other modules
+export { detectDisruptions, closedBridges };

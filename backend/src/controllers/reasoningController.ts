@@ -1,30 +1,24 @@
 import { Request, Response } from 'express';
 import { supplyChain } from '../data/supplyChain';
 import { reasonAboutDisruption } from '../azure/azureOpenAIClient';
+import { detectDisruptions } from './supplyChainController';
 
 /**
  * POST /api/reason
- * Generate reasoning and recommendations for a supply chain disruption
+ * Generate reasoning and recommendations for the current supply chain state
  */
 export const postReasonAboutDisruption = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { disruptionType, details } = req.body;
-    
-    if (!disruptionType) {
-      res.status(400).json({ status: 'error', message: 'Missing disruption type' });
-      return;
-    }
-
     // Get current supply chain state to send to the AI
     const currentState = supplyChain;
-    
-    // Call Azure OpenAI to reason about the disruption
-    const result = await reasonAboutDisruption(
-      disruptionType,
-      currentState,
-      details || {}
-    );
-    
+
+    // Get disruptions using the same logic as the UI
+    // @ts-ignore: access to detectDisruptions (exported below)
+    const disruptions = detectDisruptions(currentState, (global as any).closedBridges || []);
+
+    // Call Azure OpenAI to reason about the current state and disruptions
+    const result = await reasonAboutDisruption({ state: currentState, disruptions });
+
     res.json({
       status: 'ok',
       data: result
@@ -37,3 +31,6 @@ export const postReasonAboutDisruption = async (req: Request, res: Response): Pr
     });
   }
 };
+
+// Export detectDisruptions for use in other controllers
+export { detectDisruptions };

@@ -1,18 +1,36 @@
 import React, { useEffect, useState } from "react";
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box, Chip, TableSortLabel, IconButton, Tooltip } from "@mui/material";
 import SortIcon from '@mui/icons-material/Sort';
-import type { SupplyChainState } from "../types/supplyChain";
 import { getSupplyChainState } from "../api/supplyChainApi";
+import type { SupplyChainState } from "../types/supplyChain";
+
+// Backend disruption type
+interface DisruptionBackend {
+  type: string;
+  nodeId?: string;
+  nodeName?: string;
+  sku?: string;
+  routeId?: string;
+  from?: string;
+  to?: string;
+  bridgeId?: string;
+}
 
 interface DisruptionsTableProps {
   refreshKey: number;
 }
 
 interface Disruption {
-  type: "Stockout" | "Route Closed" | "Bridge Closed";
-  node: string;
-  sku: string;
-  details: string;
+  type: string;
+  node?: string;
+  sku?: string;
+  details?: string;
+  routeId?: string;
+  from?: string;
+  to?: string;
+  bridgeId?: string;
+  nodeId?: string;
+  nodeName?: string;
 }
 
 const DisruptionsTable: React.FC<DisruptionsTableProps> = ({ refreshKey }) => {
@@ -22,48 +40,43 @@ const DisruptionsTable: React.FC<DisruptionsTableProps> = ({ refreshKey }) => {
 
   useEffect(() => {
     const fetchDisruptions = async () => {
-      const state: SupplyChainState = await getSupplyChainState();
-      const disruptionList: Disruption[] = [];
-      
-      // Stockouts
-      state.nodes.forEach(node => {
-        Object.entries(node.inventory).forEach(([sku, qty]) => {
-          if (qty === 0) {
-            disruptionList.push({
-              type: "Stockout",
-              node: node.name,
-              sku,
-              details: `No inventory for ${sku} at ${node.name}`
-            });
-          }
-        });
-      });
-      // Closed routes
-      state.routes.forEach(route => {
-        if (route.status === "closed") {
-          const fromNode = state.nodes.find(n => n.id === route.from)?.name || route.from;
-          const toNode = state.nodes.find(n => n.id === route.to)?.name || route.to;
-          disruptionList.push({
-            type: "Route Closed",
-            node: `${fromNode} → ${toNode}`,
-            sku: "-",
-            details: `Route from ${fromNode} to ${toNode} is closed`
-          });
+      const state: SupplyChainState & { disruptions?: DisruptionBackend[] } = await getSupplyChainState();
+      // Use backend-provided disruptions array
+      const disruptionList: Disruption[] = (state.disruptions || []).map((d) => {
+        if (d.type === 'stockout') {
+          return {
+            type: 'Stockout',
+            node: d.nodeName || d.nodeId,
+            sku: d.sku,
+            details: `No inventory for ${d.sku} at ${d.nodeName || d.nodeId}`
+          };
         }
-      });
-      // Closed bridges
-      if (state.closedBridges && state.closedBridges.length > 0) {
-        state.closedBridges.forEach(bridgeId => {
-          let bridgeName = bridgeId;
-          if (bridgeId === "oakland_bay_bridge") bridgeName = "Oakland Bay Bridge";
-          disruptionList.push({
-            type: "Bridge Closed",
+        if (d.type === 'route_closed') {
+          return {
+            type: 'Route Closed',
+            node: `${d.from} → ${d.to}`,
+            sku: '-',
+            details: `Route from ${d.from} to ${d.to} is closed`
+          };
+        }
+        if (d.type === 'bridge_closed') {
+          let bridgeName = d.bridgeId;
+          if (d.bridgeId === "oakland_bay_bridge") bridgeName = "Oakland Bay Bridge";
+          return {
+            type: 'Bridge Closed',
             node: bridgeName,
-            sku: "-",
+            sku: '-',
             details: `${bridgeName} is closed, routes will be redirected`
-          });
-        });
-      }
+          };
+        }
+        // fallback for unknown types
+        return {
+          type: d.type,
+          node: d.nodeName || d.nodeId || d.routeId || d.bridgeId || '-',
+          sku: d.sku || '-',
+          details: JSON.stringify(d)
+        };
+      });
       setDisruptions(disruptionList);
     };
     fetchDisruptions();
@@ -72,8 +85,8 @@ const DisruptionsTable: React.FC<DisruptionsTableProps> = ({ refreshKey }) => {
   // Sort disruptions
   const sortedDisruptions = [...disruptions].sort((a, b) => {
     const dir = sortDirection === 'asc' ? 1 : -1;
-    if (a[sortBy] < b[sortBy]) return -1 * dir;
-    if (a[sortBy] > b[sortBy]) return 1 * dir;
+    if ((a[sortBy] || '') < (b[sortBy] || '')) return -1 * dir;
+    if ((a[sortBy] || '') > (b[sortBy] || '')) return 1 * dir;
     return 0;
   });
 

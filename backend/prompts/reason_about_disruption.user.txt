@@ -1,0 +1,9 @@
+Current Supply Chain State:
+{{currentState}}
+
+Active Disruptions:
+{{disruptions}}
+
+Analyze the current supply chain state and the listed disruptions. Identify any active disruptions or risks, and provide:
+1. Step-by-step reasoning about the impact of any disruptions or bottlenecks you detect
+2. 5 specific recommendations with clear actions to improve resilience, restore flow, or optimize performance

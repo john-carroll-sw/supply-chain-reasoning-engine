@@ -19,7 +19,7 @@ const App: React.FC = () => {
     if (hasRecommendations) {
       return window.innerHeight * 0.35; // Map smaller if recommendations
     }
-    return window.innerHeight * 0.6; // Map bigger by default
+    return window.innerHeight * 0.9; // Map bigger by default
   };
 
   const [mapPanelHeight, setMapPanelHeight] = useState(getDefaultMapPanelHeight(!!reasoningResult?.recommendations?.length));
@@ -146,7 +146,7 @@ const App: React.FC = () => {
               />
               <Paper elevation={2} sx={{
                 p: 3,
-                minHeight: "32vh",
+                minHeight: 100,
                 height: `calc(100% - ${mapPanelHeight + 12}px)`,
                 overflow: "auto",
                 display: "flex",
