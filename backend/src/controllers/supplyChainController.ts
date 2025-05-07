@@ -13,9 +13,15 @@ let closedBridges: string[] = [];
 // Utility: Detect disruptions in the current supply chain state
 function detectDisruptions(state: SupplyChainStateV1, closedBridges: string[]): any[] {
   const disruptions: any[] = [];
-  
+
+  // Defensive: default to empty arrays if missing
+  const factories = state.factories || [];
+  const distributionCenters = state.distributionCenters || [];
+  const retails = state.retails || [];
+  const routes = state.routes || [];
+
   // Process all types of nodes for stockouts
-  const processInventory = (nodeId: string, nodeName: string, inventory: InventoryRecord[]): void => {
+  const processInventory = (nodeId: string, nodeName: string, inventory: InventoryRecord[] = []) => {
     inventory.forEach(item => {
       if (item.quantity === 0) {
         disruptions.push({
@@ -29,22 +35,19 @@ function detectDisruptions(state: SupplyChainStateV1, closedBridges: string[]): 
   };
 
   // Check factories
-  state.factories.forEach((node: Factory) => {
+  factories.forEach((node: Factory) => {
     processInventory(node.id, node.name, node.inventory);
   });
-  
   // Check distribution centers
-  state.distributionCenters.forEach((node: DistributionCenter) => {
+  distributionCenters.forEach((node: DistributionCenter) => {
     processInventory(node.id, node.name, node.inventory);
   });
-  
   // Check retail locations
-  state.retails.forEach((node: Retail) => {
+  retails.forEach((node: Retail) => {
     processInventory(node.id, node.name, node.inventory);
   });
-  
   // Closed routes
-  state.routes.forEach((route: Route) => {
+  routes.forEach((route: Route) => {
     if (route.status === 'closed') {
       disruptions.push({
         type: 'route_closed',
@@ -54,9 +57,8 @@ function detectDisruptions(state: SupplyChainStateV1, closedBridges: string[]): 
       });
     }
   });
-  
   // Closed bridges
-  closedBridges.forEach(bridgeId => {
+  (closedBridges || []).forEach(bridgeId => {
     disruptions.push({
       type: 'bridge_closed',
       bridgeId
@@ -182,5 +184,5 @@ export const resetSupplyChain = (req: Request, res: Response): void => {
   res.json({ status: "ok", message: "Supply chain state reset to initial demo data." });
 };
 
-// Export detectDisruptions and closedBridges for use in other modules
-export { detectDisruptions, closedBridges };
+// Export detectDisruptions, closedBridges, and currentSupplyChain for use in other modules
+export { detectDisruptions, closedBridges, currentSupplyChain };

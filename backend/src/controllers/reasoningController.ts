@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
-import { supplyChain } from '../data/supplyChain';
 import { reasonAboutDisruption } from '../azure/reasoningService';
-import { detectDisruptions } from './supplyChainController';
+import { detectDisruptions, currentSupplyChain, closedBridges } from './supplyChainController';
 
 /**
  * POST /api/reason
@@ -9,13 +8,14 @@ import { detectDisruptions } from './supplyChainController';
  */
 export const postReasonAboutDisruption = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { optimizationPriority } = req.body;
-    // Get current supply chain state to send to the AI
-    const currentState = supplyChain;
+    // Defensive: ensure req.body is always an object
+    const body = req.body || {};
+    const { optimizationPriority } = body;
+    // Use the current mutable V1 supply chain state
+    const currentState = currentSupplyChain;
 
-    // Get disruptions using the same logic as the UI
-    // @ts-ignore: access to detectDisruptions (exported below)
-    const disruptions = detectDisruptions(currentState, (global as any).closedBridges || []);
+    // Use closedBridges imported from supplyChainController
+    const disruptions = detectDisruptions(currentState, closedBridges);
 
     // Call Azure OpenAI to reason about the current state and disruptions
     const result = await reasonAboutDisruption({ state: currentState, disruptions, optimizationPriority });
