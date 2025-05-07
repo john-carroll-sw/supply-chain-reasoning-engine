@@ -1,7 +1,7 @@
 import OpenAI, { AzureOpenAI } from "openai";
 import dotenv from "dotenv";
 import { z } from "zod";
-import { zodResponseFormat } from "openai/helpers/zod";
+import { zodResponseFormat, zodTextFormat } from "openai/helpers/zod";
 
 dotenv.config();
 
@@ -15,7 +15,7 @@ const apiVersion = process.env.AZURE_OPENAI_API_VERSION;
 const options = { endpoint, apiKey, deployment, apiVersion };
 export const AzureOpenAIClient = new AzureOpenAI(options);
 
-export const ReasoningResponseSchema = z.object({
+export const ReasoningResponse = z.object({
   reasoning: z.string(),
   recommendations: z.array(
     z.object({
@@ -24,25 +24,23 @@ export const ReasoningResponseSchema = z.object({
     })
   ),
 });
-export type ReasoningResponse = z.infer<typeof ReasoningResponseSchema>;
 
-export async function parseReasoningResponse(systemMessage: string, userMessage: string): Promise<ReasoningResponse> {
-  const completion = await AzureOpenAIClient.beta.chat.completions.parse({
+export async function parseReasoningResponse(systemMessage: string, userMessage: string): Promise<any> {
+  const response = await AzureOpenAIClient.responses.parse({
     model: process.env.AZURE_OPENAI_DEPLOYMENT!,
-    messages: [
+    input: [
       { role: "system", content: systemMessage },
       { role: "user", content: userMessage },
     ],
-    response_format: zodResponseFormat(ReasoningResponseSchema, "reasoning_response"),
+    text: {
+      format: zodTextFormat(ReasoningResponse, "reasoning_response"),
+    }
   });
 
-  if (!completion.choices || completion.choices.length === 0) {
-    throw new Error("No response from Azure OpenAI");
+  if (response.error){
+    console.error("Error in Azure OpenAI response:", response.error);
+    throw new Error("Failed to parse reasoning response");
   }
-  // Defensive: If the model fails to return a valid object, throw an error
-  const parsed = completion.choices[0].message.parsed;
-  if (!parsed) {
-    throw new Error("No structured output returned from LLM");
-  }
-  return parsed;
+  
+  return response
 }

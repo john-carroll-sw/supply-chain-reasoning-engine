@@ -19,9 +19,11 @@ export const postReasonAboutDisruption = async (req: Request, res: Response): Pr
     // Call Azure OpenAI to reason about the current state and disruptions
     const result = await reasonAboutDisruption({ state: currentState, disruptions });
 
+    // Only return the parsed reasoning output (reasoning + recommendations)
+    const parsed = result?.output_parsed || result;
     res.json({
       status: 'ok',
-      data: result
+      data: parsed
     });
   } catch (error) {
     console.error('Error generating reasoning:', error);
