@@ -44,13 +44,13 @@ window.initAzureMap = async function(container) {
   map.events.add('ready', function() {
     console.log('Azure Map is ready');
     
-    // Add map controls
+    // Add map controls to the bottom-right
     map.controls.add([
-      new atlas.control.ZoomControl({ position: 'top-right' }),
-      new atlas.control.CompassControl({ position: 'top-right' }),
-      new atlas.control.PitchControl({ position: 'top-right' }),
-      new atlas.control.StyleControl({ position: 'top-left' }),
-      new atlas.control.FullscreenControl({ position: 'top-left' })
+      new atlas.control.ZoomControl({ position: 'bottom-right' }),
+      new atlas.control.CompassControl({ position: 'bottom-right' }),
+      new atlas.control.PitchControl({ position: 'bottom-right' }),
+      new atlas.control.StyleControl({ position: 'bottom-right' }),
+      new atlas.control.FullscreenControl({ position: 'bottom-right' })
     ]);
     
     // Create a data source for supply chain nodes
@@ -80,8 +80,8 @@ window.initAzureMap = async function(container) {
           image: [
             'case',
             ['==', ['get', 'type'], 'factory'], 'marker-blue',
-            ['==', ['get', 'type'], 'distribution_center'], 'marker-green',
-            'marker-yellow'  // default for retail
+            ['==', ['get', 'type'], 'distribution_center'], 'marker-red',
+            'marker-darkblue'  // default for retail
           ]
         },
         textOptions: {
@@ -197,5 +197,13 @@ window.resizeMap = function() {
     setTimeout(function() {
       map.resize();
     }, 0);
+  }
+};
+
+// Add a cleanup function to dispose of the map instance
+window.destroyAzureMap = function() {
+  if (map) {
+    map.dispose();
+    map = null;
   }
 };

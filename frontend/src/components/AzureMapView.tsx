@@ -7,6 +7,7 @@ declare global {
     initAzureMap: (container: HTMLDivElement) => void;
     AZURE_MAPS_KEY: string;
     resizeMap: () => void;
+    destroyAzureMap?: () => void;
   }
 }
 
@@ -49,14 +50,20 @@ const AzureMapView: React.FC = () => {
     // Load Azure Maps SDK and our vanilla JS logic, then initialize
     async function setupMap() {
       try {
-        // Load the CSS first
-        await loadScript('https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css');
-        // Load the Azure Maps SDK
+        // Load the CSS first (do not await, just inject)
+        loadScript('https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css');
+        // Load the Azure Maps SDK (await)
         await loadScript('https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js');
-        // Load our custom map implementation
+        // Load our custom map implementation (await)
         await loadScript('/azureMapVanilla.js');
-        
-        // Initialize the map if everything loaded correctly
+
+        // Retry logic: wait for window.initAzureMap and mapDivRef.current to be defined
+        let retries = 10;
+        while ((!window.initAzureMap || !mapDivRef.current) && retries > 0) {
+          await new Promise(res => setTimeout(res, 100));
+          retries--;
+        }
+
         if (window.initAzureMap && mapDivRef.current) {
           window.initAzureMap(mapDivRef.current);
         } else {
@@ -82,6 +89,9 @@ const AzureMapView: React.FC = () => {
 
     return () => {
       resizeObserver.disconnect();
+      if (window.destroyAzureMap) {
+        window.destroyAzureMap();
+      }
     };
   }, []);
 
