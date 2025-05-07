@@ -119,21 +119,29 @@
 }
 
 /* Azure Map popup styles */
+.popup-content-container {
+  border-radius: 10px !important;
+}
+
 .map-popup {
   padding: 8px;
   max-width: 200px;
+  background: #23262F !important;
+  color: #F4F4F4 !important;
+  border-radius: 10px;
+  box-shadow: 0 2px 16px 0 #000a;
 }
 
 .map-popup-title {
   margin: 0 0 8px;
-  color: #fff;
+  color: #00FFD0;
   font-size: 16px;
   font-weight: 500;
 }
 
 .map-popup-detail {
   margin: 4px 0;
-  color: #ddd;
+  color: #F4F4F4;
   font-size: 14px;
 }
 

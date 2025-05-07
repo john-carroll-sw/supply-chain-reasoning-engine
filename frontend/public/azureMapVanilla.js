@@ -144,40 +144,6 @@ window.initAzureMap = async function(container) {
           }
         }
       });
-
-      // Also show popup on touch for mobile
-      map.events.add('touchstart', symbolLayer, function(e) {
-        if (e.shapes && e.shapes.length > 0) {
-          // Same implementation as mousemove
-          var shape = e.shapes[0];
-          if (shape instanceof atlas.Shape) {
-            // ... same popup logic as mousemove ...
-            var props = shape.getProperties();
-            var position = shape.getCoordinates();
-            
-            // Format inventory for popup
-            var inventoryHtml = Object.entries(props.inventory || {})
-              .map(function(entry) { return '<li>' + entry[0] + ': ' + entry[1] + '</li>'; })
-              .join('');
-            
-            var nodeType = props.type === 'factory' ? 'Factory' :
-                props.type === 'distribution_center' ? 'Distribution Center' :
-                props.type === 'retail' ? 'Retail' : props.type;
-            
-            popup.setOptions({
-              content: '<div class="map-popup">' +
-                      '<div class="map-popup-title">' + props.name + '</div>' +
-                      '<div class="map-popup-detail">Type: ' + nodeType + '</div>' +
-                      '<div class="map-popup-detail"><b>Inventory:</b></div>' +
-                      '<ul class="map-popup-detail" style="margin:0;padding-left:18px">' + inventoryHtml + '</ul>' +
-                    '</div>',
-              position: position
-            });
-            
-            popup.open(map);
-          }
-        }
-      });
     } else {
       // Display a message if no nodes were loaded
       console.warn('No supply chain nodes available to display');
