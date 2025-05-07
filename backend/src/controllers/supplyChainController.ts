@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { isEqual } from 'lodash';
 import { supplyChainV1, SupplyChainStateV1, Factory, DistributionCenter, Retail, Route, InventoryRecord } from '../data/supplyChainV1';
 
 // Store the initial state immediately when this module is loaded
@@ -96,7 +97,10 @@ export const getSupplyChain = (req: Request, res: Response): void => {
     }))
   ];
 
-  res.json({ ...currentSupplyChain, closedBridges, disruptions, nodes });
+  // Add isInitialState using lodash isEqual for deep comparison
+  const isInitialState = isEqual(currentSupplyChain, initialSupplyChain);
+
+  res.json({ ...currentSupplyChain, closedBridges, disruptions, nodes, isInitialState });
 };
 
 // POST /api/supplychain/disrupt

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Typography, Box, Divider, Card, CardContent, Chip, Paper } from "@mui/material";
 import type { ReasoningResponse } from "../types/supplyChain";
+import { useSupplyChain } from "../hooks/useSupplyChain";
 
 const DEFAULT_REASONING: ReasoningResponse = {
   reasoning: `1. No active disruptions are reported, but several high-risk (risk >10%) and high-cost routes exist (f1→dc1: cost 5 000, risk 0.10; f1→dc2: 4 800, 0.12; f1→dc3 via air: 3 000, 0.09).
@@ -40,11 +41,11 @@ const DEFAULT_REASONING: ReasoningResponse = {
 
 interface ReasoningPanelProps {
   reasoning?: ReasoningResponse;
-  isInitialState?: boolean;
   error?: string | null;
 }
 
-const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ reasoning, isInitialState = false, error = null }) => {
+const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ reasoning, error = null }) => {
+  const { isInitialState } = useSupplyChain();
   const [displayReasoning, setDisplayReasoning] = useState<ReasoningResponse | undefined>(undefined);
 
   useEffect(() => {

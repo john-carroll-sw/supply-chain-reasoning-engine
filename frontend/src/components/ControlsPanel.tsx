@@ -4,8 +4,9 @@ import {
   Select, Button, Box, FormHelperText, CircularProgress,
   Alert, Snackbar
 } from "@mui/material";
-import type { SupplyChainState, DisruptionRequest, ReasoningResponse } from "../types/supplyChain";
-import { getSupplyChainState, triggerDisruption, getReasoning, resetSupplyChain as resetSupplyChainApi } from "../api/supplyChainApi";
+import type { DisruptionRequest, ReasoningResponse } from "../types/supplyChain";
+import { triggerDisruption, getReasoning, resetSupplyChain as resetSupplyChainApi } from "../api/supplyChainApi";
+import { useSupplyChain } from "../hooks/useSupplyChain";
 
 interface ControlsPanelProps {
   onReasoningResult?: (result: ReasoningResponse | undefined) => void;
@@ -13,7 +14,7 @@ interface ControlsPanelProps {
 }
 
 const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStateChange }) => {
-  const [supplyChain, setSupplyChain] = useState<SupplyChainState | null>(null);
+  const { supplyChain, refreshSupplyChain } = useSupplyChain();
   const [disruptionType, setDisruptionType] = useState<string>("");
   const [nodeId, setNodeId] = useState<string>("");
   const [routeId, setRouteId] = useState<string>("");
@@ -27,19 +28,6 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
     message: "",
     severity: "success"
   });
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getSupplyChainState();
-        setSupplyChain(data);
-      } catch (err) {
-        console.error("Error fetching supply chain data:", err);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   // Reset secondary fields when disruption type changes
   useEffect(() => {
@@ -60,10 +48,11 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
   // Compute available SKUs for the selected node
   const availableSkus = React.useMemo(() => {
     if (disruptionType === "stockout" && nodeId && supplyChain) {
-      const node = supplyChain.nodes.find(n => n.id === nodeId);
+      const node = supplyChain.nodes.find((n: import("../types/supplyChain").SupplyChainNode) => n.id === nodeId);
       if (node) {
         return Object.entries(node.inventory)
-          .filter(entry => entry[1] > 0)
+          // .filter(([_, qty]) => qty > 0)
+          .filter(([, qty]) => qty > 0)
           .map(([key]) => key);
       }
     }
@@ -108,15 +97,14 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
         severity: "success"
       });
       
-      // Refresh supply chain state
-      const updatedData = await getSupplyChainState();
-      setSupplyChain(updatedData);
+      // Refresh supply chain state via context
+      await refreshSupplyChain();
       if (onStateChange) onStateChange();
     } catch (error) {
       console.error("Error triggering disruption:", error);
       setSnackbar({
         open: true,
-        message: "Failed to trigger disruption",
+        message: error instanceof Error ? error.message : "Failed to trigger disruption",
         severity: "error"
       });
     } finally {
@@ -167,7 +155,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
       console.error("Error getting reasoning:", error);
       setSnackbar({
         open: true,
-        message: "Failed to generate AI reasoning",
+        message: error instanceof Error ? error.message : "Failed to generate AI reasoning",
         severity: "error"
       });
     } finally {
@@ -184,6 +172,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
         message: "Demo state reset to initial values.",
         severity: "success"
       });
+      await refreshSupplyChain();
       if (onStateChange) onStateChange();
       // Optionally, also clear reasoning panel
       if (onReasoningResult) onReasoningResult(undefined);
@@ -241,8 +230,8 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
               label="Node"
             >
               {supplyChain?.nodes
-                .filter(node => node.type === "retail")
-                .map((node) => (
+                .filter((node: import("../types/supplyChain").SupplyChainNode) => node.type === "retail")
+                .map((node: import("../types/supplyChain").SupplyChainNode) => (
                   <MenuItem key={node.id} value={node.id}>
                     {node.name}
                   </MenuItem>
@@ -275,9 +264,9 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
             onChange={(e) => setRouteId(e.target.value)}
             label="Route"
           >
-            {supplyChain?.routes.map((route) => {
-              const fromNode = supplyChain.nodes.find(n => n.id === route.from)?.name;
-              const toNode = supplyChain.nodes.find(n => n.id === route.to)?.name;
+            {supplyChain?.routes.map((route: import("../types/supplyChain").SupplyChainRoute) => {
+              const fromNode = supplyChain.nodes.find((n: import("../types/supplyChain").SupplyChainNode) => n.id === route.from)?.name;
+              const toNode = supplyChain.nodes.find((n: import("../types/supplyChain").SupplyChainNode) => n.id === route.to)?.name;
               return (
                 <MenuItem key={route.id} value={route.id}>
                   {fromNode} → {toNode}
