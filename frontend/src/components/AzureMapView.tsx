@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { AzureMap, AzureMapHtmlMarker, AzureMapsProvider, type ControlOptions } from "react-azure-maps";
 import { AuthenticationType } from "azure-maps-control";
 import "./MapView.css"; // Import the custom CSS with forced-colors-mode fixes
+import { getSupplyChainState } from "../api/supplyChainApi";
+import type { SupplyChainNode } from "../types/supplyChain";
 
 // Create a custom stylesheet to handle forced-colors-mode
 const forcedColorsStylesheet = document.createElement('style');
@@ -19,8 +21,8 @@ const mapOptions = {
     authType: AuthenticationType.subscriptionKey,
     subscriptionKey: import.meta.env.VITE_AZURE_MAPS_KEY,
   },
-  center: [-122.4194, 37.7749],
-  zoom: 11,
+  center: [0, 20], // Center over the world (longitude, latitude)
+  zoom: 1.5,       // Zoomed out for a global view
   view: "Auto",
   style: "grayscale_light",
   // Add support for forced colors mode
@@ -30,44 +32,52 @@ const mapOptions = {
   }
 };
 
-const markerPositions = [
-  [-122.4194, 37.7749], // San Francisco
-  [-122.2711, 37.8044], // Oakland
-  [-122.3772, 37.6194], // SFO Airport
-  [-122.3321, 37.806],   // Bay Bridge midpoint
-  [-122.4478, 37.8078],  // Golden Gate Bridge
-  [-122.3022, 37.8688],  // Berkeley Marina
-  [-122.4852, 37.8324],  // Marin Headlands
-  [-122.4101, 37.7897],  // Embarcadero
-  [-122.2364, 37.7749],  // Alameda
-  [-122.4098, 37.8024],  // Fisherman's Wharf
-];
+const AzureMapView: React.FC = () => {
+  const [nodes, setNodes] = useState<SupplyChainNode[]>([]);
 
-const AzureMapView: React.FC = () => (
-  <AzureMapsProvider>
-    <AzureMap
-      options={mapOptions}
-      styles={{ height: "100%", width: "100%", borderRadius: 8 }}
-      controls={[
-        { controlName: "ZoomControl", options: { position: "top-right" } as ControlOptions },
-        { controlName: "CompassControl", options: { position: "top-right" } as ControlOptions },
-        { controlName: "PitchControl", options: { position: "top-right" } as ControlOptions },
-        { controlName: "StyleControl", options: { position: "top-left" } as ControlOptions },
-        { controlName: "FullscreenControl", options: { position: "top-left" } as ControlOptions }
-      ]}
-    >
-      {markerPositions.map((position, idx) => (
-        <AzureMapHtmlMarker
-          key={`html-marker-${idx}`}
-          options={{
-            color: 'DodgerBlue',
-            text: `${idx + 1}`,
-            position,
-          }}
-        />
-      ))}
-    </AzureMap>
-  </AzureMapsProvider>
-);
+  useEffect(() => {
+    const fetchNodes = async () => {
+      try {
+        const state = await getSupplyChainState();
+        setNodes(state.nodes);
+      } catch {
+        // Optionally handle error
+      }
+    };
+    fetchNodes();
+  }, []);
+
+  return (
+    <AzureMapsProvider>
+      <AzureMap
+        options={mapOptions}
+        styles={{ height: "100%", width: "100%", borderRadius: 8 }}
+        controls={[
+          { controlName: "ZoomControl", options: { position: "top-right" } as ControlOptions },
+          { controlName: "CompassControl", options: { position: "top-right" } as ControlOptions },
+          { controlName: "PitchControl", options: { position: "top-right" } as ControlOptions },
+          { controlName: "StyleControl", options: { position: "top-left" } as ControlOptions },
+          { controlName: "FullscreenControl", options: { position: "top-left" } as ControlOptions }
+        ]}
+      >
+        {nodes.map((node) => (
+          <AzureMapHtmlMarker
+            key={node.id}
+            options={{
+              color:
+                node.type === "factory"
+                  ? "#1976d2"
+                  : node.type === "distribution_center"
+                  ? "#43a047"
+                  : "#fbc02d",
+              text: node.name,
+              position: [node.location.lng, node.location.lat],
+            }}
+          />
+        ))}
+      </AzureMap>
+    </AzureMapsProvider>
+  );
+};
 
 export default AzureMapView;
