@@ -19,6 +19,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
   const [routeId, setRouteId] = useState<string>("");
   const [sku, setSku] = useState<string>("skuA");
   const [bridgeId, setBridgeId] = useState<string>("");
+  const [optimizationPriority, setOptimizationPriority] = useState<string>("cost");
   const [loading, setLoading] = useState<boolean>(false);
   const [reasoningLoading, setReasoningLoading] = useState<boolean>(false);
   const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: "success" | "error"}>({
@@ -124,7 +125,8 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
 
       const result = await getReasoning({
         disruptionType,
-        details
+        details,
+        optimizationPriority
       });
 
       // Pass reasoning result to parent component
@@ -177,6 +179,20 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
       <Typography variant="subtitle1" gutterBottom>
         Simulate disruptions and get AI reasoning
       </Typography>
+      <FormControl fullWidth margin="normal">
+        <InputLabel>Optimization Priority</InputLabel>
+        <Select
+          value={optimizationPriority}
+          onChange={(e) => setOptimizationPriority(e.target.value)}
+          label="Optimization Priority"
+        >
+          <MenuItem value="cost">Cost Efficiency</MenuItem>
+          <MenuItem value="time">Time Efficiency</MenuItem>
+          <MenuItem value="service">Service Level</MenuItem>
+          <MenuItem value="risk">Risk Minimization</MenuItem>
+        </Select>
+        <FormHelperText>Select what to optimize for in recommendations</FormHelperText>
+      </FormControl>
       <FormControl fullWidth margin="normal">
         <InputLabel>Disruption Type</InputLabel>
         <Select

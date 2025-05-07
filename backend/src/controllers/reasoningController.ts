@@ -9,6 +9,7 @@ import { detectDisruptions } from './supplyChainController';
  */
 export const postReasonAboutDisruption = async (req: Request, res: Response): Promise<void> => {
   try {
+    const { optimizationPriority } = req.body;
     // Get current supply chain state to send to the AI
     const currentState = supplyChain;
 
@@ -17,7 +18,7 @@ export const postReasonAboutDisruption = async (req: Request, res: Response): Pr
     const disruptions = detectDisruptions(currentState, (global as any).closedBridges || []);
 
     // Call Azure OpenAI to reason about the current state and disruptions
-    const result = await reasonAboutDisruption({ state: currentState, disruptions });
+    const result = await reasonAboutDisruption({ state: currentState, disruptions, optimizationPriority });
 
     // Only return the parsed reasoning output (reasoning + recommendations)
     const parsed = result?.output_parsed || result;

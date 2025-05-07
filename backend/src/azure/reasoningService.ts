@@ -1,9 +1,9 @@
 import { parseReasoningResponse as retrieveReasoningResponse } from "./azureOpenAIClient";
 import fs from "fs/promises";
 
-export async function reasonAboutDisruption(input: { state: any; disruptions: any[] }) {
+export async function reasonAboutDisruption(input: { state: any; disruptions: any[]; optimizationPriority?: string }) {
   // Load prompts
-  const systemMessage = await fs.readFile(
+  let systemMessage = await fs.readFile(
     __dirname + "/../../prompts/reason_about_disruption.system.txt",
     "utf-8"
   );
@@ -11,6 +11,10 @@ export async function reasonAboutDisruption(input: { state: any; disruptions: an
     __dirname + "/../../prompts/reason_about_disruption.user.txt",
     "utf-8"
   );
+  // Inject optimization priority if provided
+  if (input.optimizationPriority) {
+    systemMessage += `\nThe user has prioritized ${input.optimizationPriority}. When generating recommendations, give significant weight to optimizing for ${input.optimizationPriority}.`;
+  }
   // Fill in placeholders
   const userMessageWithContext = userMessage
     .replace("{{currentState}}", JSON.stringify(input.state, null, 2))

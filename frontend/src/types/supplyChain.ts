@@ -32,6 +32,7 @@ export interface DisruptionRequest {
 export interface ReasoningRequest {
   disruptionType: string;
   details: Record<string, string | number | undefined>;
+  optimizationPriority: string;
 }
 
 export interface Recommendation {
