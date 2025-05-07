@@ -1,7 +1,7 @@
-import { callOpenAIChat, ReasoningResponseSchema, ReasoningResponse } from "./azureOpenAIClient";
+import { parseReasoningResponse as retrieveReasoningResponse } from "./azureOpenAIClient";
 import fs from "fs/promises";
 
-export async function reasonAboutDisruption(input: { state: any; disruptions: any[] }): Promise<ReasoningResponse> {
+export async function reasonAboutDisruption(input: { state: any; disruptions: any[] }) {
   // Load prompts
   const systemMessage = await fs.readFile(
     __dirname + "/../../prompts/reason_about_disruption.system.txt",
@@ -19,13 +19,7 @@ export async function reasonAboutDisruption(input: { state: any; disruptions: an
   console.log("[Azure OpenAI system message]", systemMessage);
   console.log("[Azure OpenAI user message]", userMessageWithContext);
   // Call OpenAI with structured output schema
-  const result = await callOpenAIChat(
-    [
-      { role: "system", content: systemMessage },
-      { role: "user", content: userMessageWithContext }
-    ],
-    ReasoningResponseSchema
-  );
+  const result = await retrieveReasoningResponse(systemMessage, userMessageWithContext);
   console.log("[Azure OpenAI structured output]", result);
   return result;
 }

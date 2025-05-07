@@ -1,6 +1,8 @@
-import { AzureOpenAI } from "openai";
+import OpenAI, { AzureOpenAI } from "openai";
 import dotenv from "dotenv";
 import { z } from "zod";
+import { zodResponseFormat } from "openai/helpers/zod";
+
 dotenv.config();
 
 const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
@@ -13,11 +15,6 @@ const apiVersion = process.env.AZURE_OPENAI_API_VERSION;
 const options = { endpoint, apiKey, deployment, apiVersion };
 export const AzureOpenAIClient = new AzureOpenAI(options);
 
-export interface ReasoningResponse {
-  reasoning: string;
-  recommendations: Array<{ title: string; description: string }>;
-}
-
 export const ReasoningResponseSchema = z.object({
   reasoning: z.string(),
   recommendations: z.array(
@@ -27,24 +24,25 @@ export const ReasoningResponseSchema = z.object({
     })
   ),
 });
+export type ReasoningResponse = z.infer<typeof ReasoningResponseSchema>;
 
-export async function callOpenAIChat(messages: any[], responseSchema?: z.ZodTypeAny): Promise<any> {
-  const params: any = {
-    messages,
-    max_completion_tokens: 10000,
-    model: modelName,
-    // reasoning_effort: "high",
-  };
+export async function parseReasoningResponse(systemMessage: string, userMessage: string): Promise<ReasoningResponse> {
+  const completion = await AzureOpenAIClient.beta.chat.completions.parse({
+    model: process.env.AZURE_OPENAI_DEPLOYMENT!,
+    messages: [
+      { role: "system", content: systemMessage },
+      { role: "user", content: userMessage },
+    ],
+    response_format: zodResponseFormat(ReasoningResponseSchema, "reasoning_response"),
+  });
 
-  if (responseSchema) {
-    params.response_format = { schema: responseSchema };
-  }
-
-  const response = await AzureOpenAIClient.beta.chat.completions.parse(params);
-
-  if (!response.choices || response.choices.length === 0) {
+  if (!completion.choices || completion.choices.length === 0) {
     throw new Error("No response from Azure OpenAI");
   }
-
-  return response.choices[0].message.parsed;
+  // Defensive: If the model fails to return a valid object, throw an error
+  const parsed = completion.choices[0].message.parsed;
+  if (!parsed) {
+    throw new Error("No structured output returned from LLM");
+  }
+  return parsed;
 }
