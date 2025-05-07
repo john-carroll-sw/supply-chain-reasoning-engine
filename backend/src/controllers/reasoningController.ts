@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { supplyChain } from '../data/supplyChain';
-import { reasonAboutDisruption } from '../azure/azureOpenAIClient';
+import { reasonAboutDisruption } from '../azure/reasoningService';
 import { detectDisruptions } from './supplyChainController';
 
 /**
