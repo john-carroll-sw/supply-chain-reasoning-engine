@@ -73,19 +73,20 @@ const App: React.FC = () => {
           maxWidth={false}
           disableGutters
           sx={{
-            pt: 6,
-            height: "calc(100vh - 40px)",
+            height: "calc(100vh - 10px)",
             width: "100vw",
             display: "flex",
             flexDirection: "column",
             m: 0,
             p: 2,
+            // pt: 0,
+            // pb: 0,
           }}
         >
-          <Typography variant="h4" gutterBottom sx={{ color: "primary.main", mb: 4 }}>
+          <Typography variant="h4" gutterBottom sx={{ color: "primary.main", mb: 2 }}>
             Supply Chain Reasoning Demo
           </Typography>
-          <Box sx={{ display: "flex", flexGrow: 1, gap: 4, overflow: "hidden" }}>
+          <Box sx={{ display: "flex", flexGrow: 1, gap: 2, overflow: "hidden" }}>
             {/* Sidebar: Controls, AI Analysis and Recommendations */}
             <Box sx={{ display: "flex", flexDirection: "row", transition: "all 0.3s ease" }}>
               <Collapse in={!isSidebarCollapsed} orientation="horizontal">
@@ -96,7 +97,7 @@ const App: React.FC = () => {
                   maxWidth: '30vw',
                   display: "flex",
                   flexDirection: "column",
-                  gap: 3,
+                  gap: 2,
                   overflow: "auto",
                   transition: "all 0.3s ease",
                   p: 2,

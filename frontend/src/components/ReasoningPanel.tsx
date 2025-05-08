@@ -85,8 +85,8 @@ const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ reasoning, error = null
   }
 
   return (
-    <Box sx={{ p: 0, mt: 1 }}>
-      <Paper elevation={3} sx={{ p: 3, bgcolor: '#23262F', color: '#F4F4F4', borderRadius: 3, mb: 2 }}>
+    <Box sx={{ p: 0 }}>
+      <Paper elevation={3} sx={{ p: 3, bgcolor: '#23262F', color: '#F4F4F4', mb: 2 }}>
         <Typography variant="h6" gutterBottom sx={{ color: '#00FFD0', fontWeight: 700 }}>
           AI Reasoning & Recommendations
         </Typography>

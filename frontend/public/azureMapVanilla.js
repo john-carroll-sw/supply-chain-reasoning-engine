@@ -12,14 +12,15 @@ window.initAzureMap = async function(container) {
   // Get API key from window context (injected by React)
   const apiKey = window.AZURE_MAPS_KEY || '';
   
-  // Fetch supply chain nodes from backend
-  let nodes = [];
+  // Fetch supply chain state (not just nodes) to get airplanes and routes
+  let nodes = [], airplanes = [], routes = [];
   try {
-    // Use the correct API endpoint based on your backend setup
     const res = await fetch('http://localhost:4000/api/supplychain');
     const data = await res.json();
     nodes = data.nodes || [];
-    console.log('Supply chain data loaded:', nodes.length, 'nodes');
+    airplanes = data.airplanes || [];
+    routes = data.routes || [];
+    console.log('Supply chain data loaded:', nodes.length, 'nodes,', airplanes.length, 'airplanes');
   } catch (err) {
     console.error('Failed to fetch supply chain state:', err);
     // Continue with empty nodes - the map will still render
@@ -30,7 +31,7 @@ window.initAzureMap = async function(container) {
     center: [0, 20],
     zoom: 1.5,
     view: 'Auto',
-    style: 'grayscale_light',
+    style: 'grayscale_dark',
     authOptions: {
       authType: atlas.AuthenticationType.subscriptionKey,
       subscriptionKey: apiKey
@@ -147,6 +148,93 @@ window.initAzureMap = async function(container) {
     } else {
       // Display a message if no nodes were loaded
       console.warn('No supply chain nodes available to display');
+    }
+
+    // === DRAW AIRPLANE ROUTES ===
+    if (airplanes.length > 0 && nodes.length > 0) {
+      // Create a data source for airplane routes
+      var airplaneRouteSource = new atlas.source.DataSource();
+      map.sources.add(airplaneRouteSource);
+
+      airplanes.forEach(function(plane) {
+        if (!plane.currentDestination) return;
+        // Find the destination node
+        var destNode = nodes.find(function(n) { return n.id === plane.currentDestination; });
+        if (!destNode) return;
+        // Use plane's current location as start
+        var start = [plane.location.lng, plane.location.lat];
+        var end = [destNode.location.lng, destNode.location.lat];
+        // Create a LineString for the route
+        var line = new atlas.data.LineString([start, end]);
+        var shape = new atlas.Shape(line, {
+          airplaneId: plane.id,
+          from: 'airplane',
+          to: destNode.id
+        });
+        airplaneRouteSource.add(shape);
+      });
+
+      // Add a line layer for airplane routes
+      var airplaneRouteLayer = new atlas.layer.LineLayer(airplaneRouteSource, null, {
+        strokeColor: '#00FFD0',
+        strokeWidth: 3,
+        strokeDashArray: [2, 2],
+        lineJoin: 'round',
+        lineCap: 'round',
+        opacity: 0.85
+      });
+      map.layers.add(airplaneRouteLayer);
+    }
+
+    // === DRAW ALL POSSIBLE AIR ROUTES ===
+    if (routes.length > 0 && nodes.length > 0) {
+      // Create a data source for air routes
+      var airRouteSource = new atlas.source.DataSource();
+      map.sources.add(airRouteSource);
+
+      routes.forEach(function(route) {
+        if (route.mode === 'air') {
+          var fromNode = nodes.find(function(n) { return n.id === route.from; });
+          var toNode = nodes.find(function(n) { return n.id === route.to; });
+          if (!fromNode || !toNode) return;
+          var start = [fromNode.location.lng, fromNode.location.lat];
+          var end = [toNode.location.lng, toNode.location.lat];
+          var line = new atlas.data.LineString([start, end]);
+          var shape = new atlas.Shape(line, {
+            routeId: route.id,
+            from: route.from,
+            to: route.to
+          });
+          airRouteSource.add(shape);
+        }
+      });
+
+      // Add a line layer for air routes (in front of airplane routes)
+      var airRouteLayer = new atlas.layer.LineLayer(airRouteSource, null, {
+        strokeColor: '#1E90FF', // DodgerBlue
+        strokeWidth: 4,
+        strokeDashArray: [1, 2],
+        lineJoin: 'round',
+        lineCap: 'round',
+        opacity: 0.95,
+        zIndex: 110 // ensure in front
+      });
+      map.layers.add(airRouteLayer);
+
+      // Add arrows to indicate direction
+      var arrowLayer = new atlas.layer.SymbolLayer(airRouteSource, null, {
+        iconOptions: {
+          image: 'arrow-forward', // built-in icon
+          allowOverlap: true,
+          size: 0.8,
+          rotationAlignment: 'map',
+          anchor: 'center',
+        },
+        placement: 'line',
+        minZoom: 2,
+        zIndex: 120
+      });
+      map.layers.add(arrowLayer);
     }
   });
 
