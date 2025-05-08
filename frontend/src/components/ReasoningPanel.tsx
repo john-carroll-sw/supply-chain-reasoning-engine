@@ -47,6 +47,7 @@ interface ReasoningPanelProps {
 const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ reasoning, error = null }) => {
   const { isInitialState } = useSupplyChain();
   const [displayReasoning, setDisplayReasoning] = useState<ReasoningResponse | undefined>(undefined);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<number | null>(null);
 
   useEffect(() => {
     if (error) {
@@ -60,6 +61,7 @@ const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ reasoning, error = null
     } else {
       setDisplayReasoning(undefined);
     }
+    setSelectedRecommendation(null); // Reset selection on new reasoning
   }, [reasoning, isInitialState, error]);
 
   if (error) {
@@ -83,50 +85,80 @@ const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ reasoning, error = null
   }
 
   return (
-    <div>
-      <Typography variant="h6" gutterBottom>
-        AI Reasoning & Recommendations
-      </Typography>
-      {displayReasoning.reasoning && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" fontWeight="medium">Analysis:</Typography>
-          <Paper variant="outlined" sx={{ p: 2, bgcolor: "grey.50", mt: 1, mb: 2, maxHeight: 200, overflow: 'auto' }}>
-            <Typography variant="body2" style={{ whiteSpace: 'pre-wrap' }}>
-              {displayReasoning.reasoning}
-            </Typography>
-          </Paper>
-        </Box>
-      )}
-      {displayReasoning.recommendations.length > 0 && (
-        <>
-          <Divider sx={{ my: 2 }} />
-          <Typography variant="subtitle1" gutterBottom fontWeight="medium">
-            Recommendations:
-          </Typography>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {displayReasoning.recommendations.map((rec, index) => (
-              <Card key={index} variant="outlined">
-                <CardContent sx={{ pb: 1 }}>
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <Chip 
-                      label={`Option ${index + 1}`} 
-                      size="small" 
-                      sx={{ mr: 1, bgcolor: index === 0 ? 'primary.main' : 'grey.400', color: 'grey.900', fontWeight: 600 }} 
-                    />
-                    <Typography variant="subtitle2">
-                      {rec.title}
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    {rec.description}
-                  </Typography>
-                </CardContent>
-              </Card>
-            ))}
+    <Box sx={{ p: 0, mt: 1 }}>
+      <Paper elevation={3} sx={{ p: 3, bgcolor: '#23262F', color: '#F4F4F4', borderRadius: 3, mb: 2 }}>
+        <Typography variant="h6" gutterBottom sx={{ color: '#00FFD0', fontWeight: 700 }}>
+          AI Reasoning & Recommendations
+        </Typography>
+        {displayReasoning.reasoning && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" fontWeight="medium" sx={{ color: '#00FFD0' }}>Analysis:</Typography>
+            <Paper sx={{ p: 2, bgcolor: '#181A20', color: '#F4F4F4', mt: 1, mb: 2, maxHeight: 300, overflow: 'auto', borderRadius: 2, boxShadow: 'none' }}>
+              <Typography variant="body2" style={{ whiteSpace: 'pre-wrap' }}>
+                {displayReasoning.reasoning}
+              </Typography>
+            </Paper>
           </Box>
-        </>
-      )}
-    </div>
+        )}
+        {displayReasoning.recommendations.length > 0 && (
+          <>
+            <Divider sx={{ my: 2, bgcolor: '#00FFD0' }} />
+            <Typography variant="subtitle1" gutterBottom fontWeight="medium" sx={{ color: '#00FFD0' }}>
+              Recommendations:
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {displayReasoning.recommendations.map((rec, index) => (
+                <Card
+                  key={index}
+                  onClick={() => setSelectedRecommendation(index)}
+                  sx={{
+                    mb: 1,
+                    bgcolor: selectedRecommendation === index ? '#23262F' : '#181A20',
+                    color: '#F4F4F4',
+                    borderRadius: 2,
+                    border: selectedRecommendation === index
+                      ? '2.5px solid #00FFD0'
+                      : '2px solid #333',
+                    transition: 'border-color 0.2s, box-shadow 0.2s, background 0.2s',
+                    boxShadow: selectedRecommendation === index
+                      ? '0 0 12px #00FFD055'
+                      : 'none',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      border: '2.5px solid #00FFD0',
+                      boxShadow: '0 0 8px #00FFD033',
+                      bgcolor: '#23262F',
+                    },
+                  }}
+                >
+                  <CardContent sx={{ pb: 1 }}>
+                    <Box display="flex" alignItems="center" mb={1}>
+                      <Chip
+                        label={`Option ${index + 1}`}
+                        size="small"
+                        sx={{
+                          mr: 1,
+                          bgcolor: selectedRecommendation === index ? '#00FFD0' : 'grey.700',
+                          color: selectedRecommendation === index ? '#181A20' : '#F4F4F4',
+                          fontWeight: 600,
+                          transition: 'background 0.2s, color 0.2s',
+                        }}
+                      />
+                      <Typography variant="subtitle2" sx={{ color: '#00FFD0', fontWeight: 600 }}>
+                        {rec.title}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ color: '#F4F4F4' }}>
+                      {rec.description}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          </>
+        )}
+      </Paper>
+    </Box>
   );
 };
 
