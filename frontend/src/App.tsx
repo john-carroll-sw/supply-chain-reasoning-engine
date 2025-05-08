@@ -139,7 +139,7 @@ const App: React.FC = () => {
                 id="main-map-container"
                 elevation={4}
                 sx={{
-                  height: '50%',
+                  height: mapPanelHeight,
                   minHeight: 100,
                   maxHeight: '80vh',
                   p: 0,
@@ -147,7 +147,7 @@ const App: React.FC = () => {
                   background: "linear-gradient(135deg, #23262F 60%, #23262F 100%)",
                   transition: "height 0.2s",
                   position: "relative",
-                  flex: 1,
+                  flex: 'none',
                 }}
               >
                 <AzureMapView />
@@ -156,13 +156,13 @@ const App: React.FC = () => {
               <Paper elevation={2} sx={{
                 p: 3,
                 minHeight: 100,
-                height: '50%',
+                height: `calc(100% - ${mapPanelHeight}px - 8px)`,
                 overflow: "auto",
                 display: "flex",
                 flexDirection: "column",
                 transition: "height 0.2s",
                 gap: 3,
-                flex: 1,
+                flex: 'none',
               }}>
                 <NodeSummaryTable />
                 <DisruptionsTable />

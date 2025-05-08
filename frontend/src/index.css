@@ -80,6 +80,7 @@ button:focus-visible {
   border: none;
   cursor: ns-resize;
   transition: opacity 0.2s, background 0.2s;
+  padding: 6px 0;
 }
 /* .draggable-divider:hover {
   opacity: 1;
