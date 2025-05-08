@@ -4,7 +4,7 @@ import { useSupplyChain } from "../hooks/useSupplyChain";
 import type { SupplyChainNode } from "../types/supplyChain";
 import type { InventoryRecord } from "../../../backend/src/data/supplyChainV1";
 
-// Type guards for node types
+// Type guards
 function isFactory(node: SupplyChainNode): node is SupplyChainNode & { productionRates: Record<string, number>; productionTimes: Record<string, number>; inventory: InventoryRecord[] } {
   return node.type === "factory" && Array.isArray(node.inventory) && "productionRates" in node && "productionTimes" in node;
 }
@@ -119,14 +119,14 @@ const NodeSummaryTable: React.FC = () => {
                         if (col.key === 'prod-rate' && isFactory(node)) {
                           return (
                             <TableCell key={col.key} sx={{ color: '#F4F4F4' }}>
-                              {skus.map(sku => node.productionRates[sku] !== undefined ? `${sku}: ${node.productionRates[sku]}` : null).filter(Boolean).join(', ') || '-'}
+                              {skus.map(sku => node.productionRates?.[sku] !== undefined ? `${sku}: ${node.productionRates[sku]}` : null).filter(Boolean).join(', ') || '-'}
                             </TableCell>
                           );
                         }
                         if (col.key === 'prod-time' && isFactory(node)) {
                           return (
                             <TableCell key={col.key} sx={{ color: '#F4F4F4' }}>
-                              {skus.map(sku => node.productionTimes[sku] !== undefined ? `${sku}: ${node.productionTimes[sku]}` : null).filter(Boolean).join(', ') || '-'}
+                              {skus.map(sku => node.productionTimes?.[sku] !== undefined ? `${sku}: ${node.productionTimes[sku]}` : null).filter(Boolean).join(', ') || '-'}
                             </TableCell>
                           );
                         }
@@ -153,7 +153,7 @@ const NodeSummaryTable: React.FC = () => {
                         if (col.key === 'demand' && isRetail(node)) {
                           return (
                             <TableCell key={col.key} sx={{ color: '#F4F4F4' }}>
-                              {skus.map(sku => node.demand[sku] !== undefined ? `${sku}: ${node.demand[sku]}` : null).filter(Boolean).join(', ') || '-'}
+                              {skus.map(sku => node.demand?.[sku] !== undefined ? `${sku}: ${node.demand?.[sku]}` : null).filter(Boolean).join(', ') || '-'}
                             </TableCell>
                           );
                         }
