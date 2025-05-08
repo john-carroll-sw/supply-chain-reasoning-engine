@@ -1,95 +1,71 @@
-import React, { useEffect, useState } from "react";
-import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box, TableSortLabel } from "@mui/material";
-import type { SupplyChainNode, SupplyChainState } from "../types/supplyChain";
-import { getSupplyChainState } from "../api/supplyChainApi";
-import type { Factory, DistributionCenter, Retail, InventoryRecord } from "../../../backend/src/data/supplyChainV1";
+import React from "react";
+import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Typography } from "@mui/material";
+import { useSupplyChain } from "../hooks/useSupplyChain";
+import type { SupplyChainNode } from "../types/supplyChain";
+import type { InventoryRecord } from "../../../backend/src/data/supplyChainV1";
 
-const formatNodeType = (type: string): string => {
-  switch (type) {
-    case "factory":
-      return "Factory";
-    case "distribution_center":
-      return "Distribution Center";
-    case "retail":
-      return "Retail";
-    default:
-      return type;
-  }
-};
-
-interface NodeSummaryTableProps {
-  refreshKey: number;
+// Type guards for node types
+function isFactory(node: SupplyChainNode): node is SupplyChainNode & { productionRates: Record<string, number>; productionTimes: Record<string, number>; inventory: InventoryRecord[] } {
+  return node.type === "factory" && Array.isArray(node.inventory) && "productionRates" in node && "productionTimes" in node;
+}
+function isDistributionCenter(node: SupplyChainNode): node is SupplyChainNode & { inventory: InventoryRecord[] } {
+  return node.type === "distribution_center" && Array.isArray(node.inventory);
+}
+function isRetail(node: SupplyChainNode): node is SupplyChainNode & { demand: Record<string, number>; inventory: InventoryRecord[] } {
+  return node.type === "retail" && Array.isArray(node.inventory) && "demand" in node;
 }
 
-const NodeSummaryTable: React.FC<NodeSummaryTableProps> = ({ refreshKey }) => {
-  const [nodes, setNodes] = useState<SupplyChainNode[]>([]);
-  const [skus, setSkus] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<string>('name');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+const NODE_TYPE_EXTRA_COLUMNS = {
+  factory: [
+    { key: "prod-rate", label: "Production Rate" },
+    { key: "prod-time", label: "Production Time" }
+  ],
+  distribution_center: [
+    { key: "min-inv", label: "Min Inv" },
+    { key: "max-inv", label: "Max Inv" }
+  ],
+  retail: [
+    { key: "min-inv", label: "Min Inv" },
+    { key: "max-inv", label: "Max Inv" },
+    { key: "demand", label: "Demand" }
+  ]
+};
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const state: SupplyChainState = await getSupplyChainState();
-      setNodes(state.nodes);
-      // Collect all unique SKUs
-      const skuSet = new Set<string>();
-      state.nodes.forEach(node => {
-        Object.keys(node.inventory).forEach(sku => skuSet.add(sku));
-      });
-      setSkus(Array.from(skuSet));
-    };
-    fetchData();
-  }, [refreshKey]);
-
-  const handleSort = (column: string) => {
-    if (sortBy === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+const NodeSummaryTable: React.FC = () => {
+  const { supplyChain } = useSupplyChain();
+  const nodes = supplyChain?.nodes ?? [];
+  // Collect all unique SKUs
+  const skuSet = new Set<string>();
+  nodes.forEach((node) => {
+    if (Array.isArray(node.inventory)) {
+      (node.inventory as InventoryRecord[]).forEach((item: InventoryRecord) => skuSet.add(item.skuId));
     } else {
-      setSortBy(column);
-      setSortDirection('asc');
+      Object.keys(node.inventory).forEach((sku) => skuSet.add(sku));
     }
-  };
-
-  const sortedNodes = [...nodes].sort((a, b) => {
-    let aValue: string | number = a[sortBy as keyof SupplyChainNode] as string | number;
-    let bValue: string | number = b[sortBy as keyof SupplyChainNode] as string | number;
-    if (sortBy.startsWith('sku:')) {
-      const sku = sortBy.replace('sku:', '');
-      aValue = a.inventory[sku] ?? 0;
-      bValue = b.inventory[sku] ?? 0;
-    }
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
   });
+  const skus = Array.from(skuSet);
 
-  // Helper to get min/max inventory for a node/sku
-  const getMinMax = (node: Factory | DistributionCenter | Retail, sku: string) => {
-    const inv = (node as Factory | DistributionCenter | Retail).inventory;
-    if (Array.isArray(inv)) {
-      const rec = inv.find((item: InventoryRecord) => item.skuId === sku);
-      if (rec) return { min: rec.minInventory, max: rec.maxInventory };
-    }
-    return { min: undefined, max: undefined };
-  };
+  // Group nodes by type
+  const groupedNodes: Record<string, SupplyChainNode[]> = React.useMemo(() => {
+    const groups: Record<string, SupplyChainNode[]> = {};
+    nodes.forEach((node) => {
+      if (!groups[node.type]) groups[node.type] = [];
+      groups[node.type].push(node);
+    });
+    return groups;
+  }, [nodes]);
 
-  // Helper to get production rates/times for factories
-  const getProduction = (node: Factory | DistributionCenter | Retail, sku: string) => {
-    if ('productionRates' in node && 'productionTimes' in node) {
-      return {
-        rate: node.productionRates[sku],
-        time: node.productionTimes[sku]
-      };
+  const formatNodeType = (type: string): string => {
+    switch (type) {
+      case "factory":
+        return "Factory";
+      case "distribution_center":
+        return "Distribution Center";
+      case "retail":
+        return "Retail";
+      default:
+        return type;
     }
-    return { rate: undefined, time: undefined };
-  };
-
-  // Helper to get demand for retails
-  const getDemand = (node: Factory | DistributionCenter | Retail, sku: string) => {
-    if ('demand' in node) {
-      return node.demand[sku];
-    }
-    return undefined;
   };
 
   return (
@@ -103,82 +79,100 @@ const NodeSummaryTable: React.FC<NodeSummaryTableProps> = ({ refreshKey }) => {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell sx={{ color: '#00FFD0', fontWeight: 700 }}>
-                <TableSortLabel
-                  active={sortBy === 'name'}
-                  direction={sortBy === 'name' ? sortDirection : 'asc'}
-                  onClick={() => handleSort('name')}
-                >Name</TableSortLabel>
-              </TableCell>
-              <TableCell sx={{ color: '#00FFD0', fontWeight: 700 }}>
-                <TableSortLabel
-                  active={sortBy === 'type'}
-                  direction={sortBy === 'type' ? sortDirection : 'asc'}
-                  onClick={() => handleSort('type')}
-                >Type</TableSortLabel>
-              </TableCell>
+              <TableCell sx={{ color: '#00FFD0', fontWeight: 700 }}>Name</TableCell>
+              <TableCell sx={{ color: '#00FFD0', fontWeight: 700 }}>Type</TableCell>
               <TableCell sx={{ color: '#00FFD0', fontWeight: 700 }}>Location</TableCell>
               {skus.map((sku) => (
-                <TableCell key={sku} sx={{ color: '#00FFD0', fontWeight: 700 }}>
-                  <TableSortLabel
-                    active={sortBy === `sku:${sku}`}
-                    direction={sortBy === `sku:${sku}` ? sortDirection : 'asc'}
-                    onClick={() => handleSort(`sku:${sku}`)}
-                  >{sku}</TableSortLabel>
-                </TableCell>
-              ))}
-              {/* Extra columns for min/max, production, demand */}
-              {skus.map((sku) => (
-                <TableCell key={sku + '-min'} sx={{ color: '#00FFD0', fontWeight: 700 }}>Min Inv ({sku})</TableCell>
-              ))}
-              {skus.map((sku) => (
-                <TableCell key={sku + '-max'} sx={{ color: '#00FFD0', fontWeight: 700 }}>Max Inv ({sku})</TableCell>
-              ))}
-              {skus.map((sku) => (
-                <TableCell key={sku + '-prod-rate'} sx={{ color: '#00FFD0', fontWeight: 700 }}>Prod Rate ({sku})</TableCell>
-              ))}
-              {skus.map((sku) => (
-                <TableCell key={sku + '-prod-time'} sx={{ color: '#00FFD0', fontWeight: 700 }}>Prod Time ({sku})</TableCell>
-              ))}
-              {skus.map((sku) => (
-                <TableCell key={sku + '-demand'} sx={{ color: '#00FFD0', fontWeight: 700 }}>Demand ({sku})</TableCell>
+                <TableCell key={sku} sx={{ color: '#00FFD0', fontWeight: 700 }}>{sku}</TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedNodes.map((node) => (
-              <TableRow key={node.id}>
-                <TableCell sx={{ color: '#F4F4F4' }}>{node.name}</TableCell>
-                <TableCell sx={{ color: '#F4F4F4' }}>{formatNodeType(node.type)}</TableCell>
-                <TableCell sx={{ color: '#F4F4F4' }}>{node.location ? `${node.location.lat.toFixed(2)}, ${node.location.lng.toFixed(2)}` : '-'}</TableCell>
-                {skus.map((sku) => (
-                  <TableCell key={sku} sx={{ color: '#F4F4F4' }}>{node.inventory[sku] ?? 0}</TableCell>
-                ))}
-                {/* Min/Max Inventory */}
-                {skus.map((sku) => {
-                  const { min } = getMinMax(node, sku);
-                  return <TableCell key={sku + '-min'} sx={{ color: '#F4F4F4' }}>{min !== undefined ? min : '-'}</TableCell>;
-                })}
-                {skus.map((sku) => {
-                  const { max } = getMinMax(node, sku);
-                  return <TableCell key={sku + '-max'} sx={{ color: '#F4F4F4' }}>{max !== undefined ? max : '-'}</TableCell>;
-                })}
-                {/* Production Rates/Times (factories only) */}
-                {skus.map((sku) => {
-                  const { rate } = getProduction(node, sku);
-                  return <TableCell key={sku + '-prod-rate'} sx={{ color: '#F4F4F4' }}>{rate !== undefined ? rate : '-'}</TableCell>;
-                })}
-                {skus.map((sku) => {
-                  const { time } = getProduction(node, sku);
-                  return <TableCell key={sku + '-prod-time'} sx={{ color: '#F4F4F4' }}>{time !== undefined ? time : '-'}</TableCell>;
-                })}
-                {/* Demand (retails only) */}
-                {skus.map((sku) => {
-                  const demand = getDemand(node, sku);
-                  return <TableCell key={sku + '-demand'} sx={{ color: '#F4F4F4' }}>{demand !== undefined ? demand : '-'}</TableCell>;
-                })}
-              </TableRow>
-            ))}
+            {(['factory', 'distribution_center', 'retail'] as const).map((type) =>
+              groupedNodes[type]?.length ? (
+                <React.Fragment key={type}>
+                  {/* Sub-header for this node type */}
+                  <TableRow>
+                    <TableCell colSpan={3 + skus.length} sx={{ fontWeight: 'bold', background: '#1A1C23', color: '#00FFD0' }}>
+                      {formatNodeType(type)}
+                    </TableCell>
+                    {NODE_TYPE_EXTRA_COLUMNS[type].map((col) => (
+                      <TableCell key={col.key} sx={{ color: '#00FFD0', fontWeight: 700 }}>{col.label}</TableCell>
+                    ))}
+                  </TableRow>
+                  {/* Rows for this type */}
+                  {groupedNodes[type].map((node) => (
+                    <TableRow key={node.id}>
+                      <TableCell sx={{ color: '#F4F4F4' }}>{node.name}</TableCell>
+                      <TableCell sx={{ color: '#F4F4F4' }}>{formatNodeType(node.type)}</TableCell>
+                      <TableCell sx={{ color: '#F4F4F4' }}>{node.location ? `${node.location.lat.toFixed(2)}, ${node.location.lng.toFixed(2)}` : '-'}</TableCell>
+                      {skus.map((sku) => (
+                        <TableCell key={sku} sx={{ color: '#F4F4F4' }}>
+                          {Array.isArray(node.inventory)
+                            ? (node.inventory as InventoryRecord[]).find((item: InventoryRecord) => item.skuId === sku)?.quantity ?? 0
+                            : (node.inventory as Record<string, number>)[sku] ?? 0}
+                        </TableCell>
+                      ))}
+                      {/* Extra columns for this node type */}
+                      {NODE_TYPE_EXTRA_COLUMNS[type].map((col) => {
+                        if (col.key === 'prod-rate') {
+                          return (
+                            <TableCell key={col.key} sx={{ color: '#F4F4F4' }}>
+                              {isFactory(node)
+                                ? skus.map((sku) => node.productionRates[sku] !== undefined ? `${sku}: ${node.productionRates[sku]}` : null).filter(Boolean).join(', ') || '-'
+                                : '-'}
+                            </TableCell>
+                          );
+                        }
+                        if (col.key === 'prod-time') {
+                          return (
+                            <TableCell key={col.key} sx={{ color: '#F4F4F4' }}>
+                              {isFactory(node)
+                                ? skus.map((sku) => node.productionTimes[sku] !== undefined ? `${sku}: ${node.productionTimes[sku]}` : null).filter(Boolean).join(', ') || '-'
+                                : '-'}
+                            </TableCell>
+                          );
+                        }
+                        if (col.key === 'min-inv') {
+                          return (
+                            <TableCell key={col.key} sx={{ color: '#F4F4F4' }}>
+                              {(isDistributionCenter(node) || isRetail(node))
+                                ? skus.map((sku) => {
+                                    const rec = node.inventory.find((item: InventoryRecord) => item.skuId === sku);
+                                    return rec?.minInventory !== undefined ? `${sku}: ${rec.minInventory}` : null;
+                                  }).filter(Boolean).join(', ') || '-'
+                                : '-'}
+                            </TableCell>
+                          );
+                        }
+                        if (col.key === 'max-inv') {
+                          return (
+                            <TableCell key={col.key} sx={{ color: '#F4F4F4' }}>
+                              {(isDistributionCenter(node) || isRetail(node))
+                                ? skus.map((sku) => {
+                                    const rec = node.inventory.find((item: InventoryRecord) => item.skuId === sku);
+                                    return rec?.maxInventory !== undefined ? `${sku}: ${rec.maxInventory}` : null;
+                                  }).filter(Boolean).join(', ') || '-'
+                                : '-'}
+                            </TableCell>
+                          );
+                        }
+                        if (col.key === 'demand') {
+                          return (
+                            <TableCell key={col.key} sx={{ color: '#F4F4F4' }}>
+                              {isRetail(node)
+                                ? skus.map((sku) => node.demand[sku] !== undefined ? `${sku}: ${node.demand[sku]}` : null).filter(Boolean).join(', ') || '-'
+                                : '-'}
+                            </TableCell>
+                          );
+                        }
+                        return <TableCell key={col.key} sx={{ color: '#F4F4F4' }}>-</TableCell>;
+                      })}
+                    </TableRow>
+                  ))}
+                </React.Fragment>
+              ) : null
+            )}
           </TableBody>
         </Table>
       </TableContainer>

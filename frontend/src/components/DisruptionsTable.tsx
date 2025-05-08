@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box, Chip, TableSortLabel } from "@mui/material";
-import { getSupplyChainState } from "../api/supplyChainApi";
+import { useSupplyChain } from "../hooks/useSupplyChain";
 import type { SupplyChainState } from "../types/supplyChain";
 
 // Backend disruption type
@@ -13,10 +13,6 @@ interface DisruptionBackend {
   from?: string;
   to?: string;
   bridgeId?: string;
-}
-
-interface DisruptionsTableProps {
-  refreshKey: number;
 }
 
 interface Disruption {
@@ -32,62 +28,62 @@ interface Disruption {
   nodeName?: string;
 }
 
-const DisruptionsTable: React.FC<DisruptionsTableProps> = ({ refreshKey }) => {
-  const [disruptions, setDisruptions] = useState<Disruption[]>([]);
+const DisruptionsTable: React.FC = () => {
+  const { supplyChain } = useSupplyChain();
   const [sortBy, setSortBy] = useState<keyof Disruption>('type');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    const fetchDisruptions = async () => {
-      const state: SupplyChainState & { disruptions?: DisruptionBackend[] } = await getSupplyChainState();
-      // Use backend-provided disruptions array
-      const disruptionList: Disruption[] = (state.disruptions || []).map((d) => {
-        if (d.type === 'stockout') {
-          return {
-            type: 'Stockout',
-            node: d.nodeName || d.nodeId,
-            sku: d.sku,
-            details: `No inventory for ${d.sku} at ${d.nodeName || d.nodeId}`
-          };
-        }
-        if (d.type === 'route_closed') {
-          return {
-            type: 'Route Closed',
-            node: `${d.from} → ${d.to}`,
-            sku: '-',
-            details: `Route from ${d.from} to ${d.to} is closed`
-          };
-        }
-        if (d.type === 'bridge_closed') {
-          let bridgeName = d.bridgeId;
-          if (d.bridgeId === "oakland_bay_bridge") bridgeName = "Oakland Bay Bridge";
-          return {
-            type: 'Bridge Closed',
-            node: bridgeName,
-            sku: '-',
-            details: `${bridgeName} is closed, routes will be redirected`
-          };
-        }
-        // fallback for unknown types
+  // Map backend disruptions to frontend disruptions
+  const disruptions: Disruption[] = useMemo(() => {
+    const disruptionsBackend = (supplyChain as SupplyChainState & { disruptions?: DisruptionBackend[] })?.disruptions || [];
+    return disruptionsBackend.map((d) => {
+      if (d.type === 'stockout') {
         return {
-          type: d.type,
-          node: d.nodeName || d.nodeId || d.routeId || d.bridgeId || '-',
-          sku: d.sku || '-',
-          details: JSON.stringify(d)
+          type: 'Stockout',
+          node: d.nodeName || d.nodeId,
+          sku: d.sku,
+          details: `No inventory for ${d.sku} at ${d.nodeName || d.nodeId}`
         };
-      });
-      setDisruptions(disruptionList);
-    };
-    fetchDisruptions();
-  }, [refreshKey]);
+      }
+      if (d.type === 'route_closed') {
+        return {
+          type: 'Route Closed',
+          node: `${d.from} → ${d.to}`,
+          sku: '-',
+          details: `Route from ${d.from} to ${d.to} is closed`
+        };
+      }
+      if (d.type === 'bridge_closed') {
+        let bridgeName = d.bridgeId;
+        if (d.bridgeId === "oakland_bay_bridge") bridgeName = "Oakland Bay Bridge";
+        return {
+          type: 'Bridge Closed',
+          node: bridgeName,
+          sku: '-',
+          details: `${bridgeName} is closed, routes will be redirected`
+        };
+      }
+      // fallback for unknown types
+      return {
+        type: d.type,
+        node: d.nodeName || d.nodeId || d.routeId || d.bridgeId || '-',
+        sku: d.sku || '-',
+        details: JSON.stringify(d)
+      };
+    });
+  }, [supplyChain]);
 
   // Sort disruptions
-  const sortedDisruptions = [...disruptions].sort((a, b) => {
+  const sortedDisruptions = useMemo(() => {
+    const arr = [...disruptions];
     const dir = sortDirection === 'asc' ? 1 : -1;
-    if ((a[sortBy] || '') < (b[sortBy] || '')) return -1 * dir;
-    if ((a[sortBy] || '') > (b[sortBy] || '')) return 1 * dir;
-    return 0;
-  });
+    arr.sort((a, b) => {
+      if ((a[sortBy] || '') < (b[sortBy] || '')) return -1 * dir;
+      if ((a[sortBy] || '') > (b[sortBy] || '')) return 1 * dir;
+      return 0;
+    });
+    return arr;
+  }, [disruptions, sortBy, sortDirection]);
 
   const handleSort = (column: keyof Disruption) => {
     if (sortBy === column) {
