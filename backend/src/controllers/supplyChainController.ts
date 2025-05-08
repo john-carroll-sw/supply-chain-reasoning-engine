@@ -47,6 +47,59 @@ function detectDisruptions(state: SupplyChainStateV1, closedBridges: string[]): 
   retails.forEach((node: Retail) => {
     processInventory(node.id, node.name, node.inventory);
   });
+
+  // 1. Retail: Demand exceeds inventory
+  retails.forEach((node: Retail) => {
+    Object.entries(node.demand || {}).forEach(([sku, demandValue]) => {
+      const inv = node.inventory.find(item => item.skuId === sku);
+      if (inv && demandValue > inv.quantity) {
+        disruptions.push({
+          type: 'demand_exceeds_inventory',
+          nodeId: node.id,
+          nodeName: node.name,
+          sku,
+          demand: demandValue,
+          inventory: inv.quantity
+        });
+      }
+    });
+  });
+
+  // 2. Factory: Production rate below total downstream demand
+  factories.forEach((factory: Factory) => {
+    Object.entries(factory.productionRates || {}).forEach(([sku, rate]) => {
+      // Sum demand for this SKU at all retails
+      const totalDemand = retails.reduce((sum, r) => sum + (r.demand?.[sku] || 0), 0);
+      if (rate < totalDemand) {
+        disruptions.push({
+          type: 'production_rate_insufficient',
+          nodeId: factory.id,
+          nodeName: factory.name,
+          sku,
+          productionRate: rate,
+          totalDemand
+        });
+      }
+    });
+  });
+
+  // 3. Factory: Production time too high (arbitrary threshold, e.g., > 5 time units)
+  const PRODUCTION_TIME_THRESHOLD = 5;
+  factories.forEach((factory: Factory) => {
+    Object.entries(factory.productionTimes || {}).forEach(([sku, time]) => {
+      if (time > PRODUCTION_TIME_THRESHOLD) {
+        disruptions.push({
+          type: 'production_time_too_high',
+          nodeId: factory.id,
+          nodeName: factory.name,
+          sku,
+          productionTime: time,
+          threshold: PRODUCTION_TIME_THRESHOLD
+        });
+      }
+    });
+  });
+
   // Closed routes
   routes.forEach((route: Route) => {
     if (route.status === 'closed') {
@@ -78,22 +131,25 @@ export const getSupplyChain = (req: Request, res: Response): void => {
       id: f.id,
       name: f.name,
       type: 'factory',
-      inventory: Object.fromEntries(f.inventory.map(item => [item.skuId, item.quantity])),
-      location: f.location
+      inventory: f.inventory, // send as array
+      location: f.location,
+      productionRates: f.productionRates,
+      productionTimes: f.productionTimes
     })),
     ...currentSupplyChain.distributionCenters.map(dc => ({
       id: dc.id,
       name: dc.name,
       type: 'distribution_center',
-      inventory: Object.fromEntries(dc.inventory.map(item => [item.skuId, item.quantity])),
+      inventory: dc.inventory, // send as array
       location: dc.location
     })),
     ...currentSupplyChain.retails.map(r => ({
       id: r.id,
       name: r.name,
       type: 'retail',
-      inventory: Object.fromEntries(r.inventory.map(item => [item.skuId, item.quantity])),
-      location: r.location
+      inventory: r.inventory, // send as array
+      location: r.location,
+      demand: r.demand
     }))
   ];
 

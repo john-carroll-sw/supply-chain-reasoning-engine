@@ -52,7 +52,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
       if (node) {
         return Object.entries(node.inventory)
           // .filter(([_, qty]) => qty > 0)
-          .filter(([, qty]) => qty > 0)
+          .filter(([, inventoryRecord]) => inventoryRecord.quantity > 0)
           .map(([key]) => key);
       }
     }
