@@ -120,8 +120,7 @@ const App: React.FC = () => {
                   borderRadius: '8px 0 0 8px', // Only left corners rounded
                 }}>
                   <ControlsPanel onReasoningResult={handleReasoningResult} onStateChange={handleStateChange} />
-                  <NodeSummaryTable refreshKey={mapRefreshKey} />
-                  <DisruptionsTable refreshKey={mapRefreshKey} />
+                  <ReasoningPanel reasoning={reasoningResult} />
                 </Paper>
               </Collapse>
               <Box
@@ -179,8 +178,10 @@ const App: React.FC = () => {
                 display: "flex",
                 flexDirection: "column",
                 transition: "height 0.2s",
+                gap: 3,
               }}>
-                <ReasoningPanel reasoning={reasoningResult} />
+                <NodeSummaryTable refreshKey={mapRefreshKey} />
+                <DisruptionsTable refreshKey={mapRefreshKey} />
               </Paper>
             </Box>
           </Box>

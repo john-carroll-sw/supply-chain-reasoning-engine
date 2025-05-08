@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box, Chip, TableSortLabel, IconButton, Tooltip } from "@mui/material";
-import SortIcon from '@mui/icons-material/Sort';
+import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box, Chip, TableSortLabel } from "@mui/material";
 import { getSupplyChainState } from "../api/supplyChainApi";
 import type { SupplyChainState } from "../types/supplyChain";
 
@@ -106,11 +105,6 @@ const DisruptionsTable: React.FC<DisruptionsTableProps> = ({ refreshKey }) => {
           <Typography variant="h6" gutterBottom>
             Active Disruptions
           </Typography>
-          <Tooltip title={`Sort: ${sortDirection === 'asc' ? 'Ascending' : 'Descending'}`}> 
-            <IconButton onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}>
-              <SortIcon />
-            </IconButton>
-          </Tooltip>
         </Box>
         <Table size="small">
           <TableHead>
