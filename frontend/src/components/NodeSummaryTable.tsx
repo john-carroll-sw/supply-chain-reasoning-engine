@@ -33,7 +33,7 @@ const NODE_TYPE_EXTRA_COLUMNS = {
 
 const NodeSummaryTable: React.FC = () => {
   const { supplyChain } = useSupplyChain();
-  const nodes = supplyChain?.nodes ?? [];
+  const nodes = React.useMemo(() => supplyChain?.nodes ?? [], [supplyChain]);
   // Collect all unique SKUs
   const skuSet = new Set<string>();
   nodes.forEach((node) => {
@@ -97,7 +97,7 @@ const NodeSummaryTable: React.FC = () => {
                       {formatNodeType(type)}
                     </TableCell>
                     {NODE_TYPE_EXTRA_COLUMNS[type].map((col) => (
-                      <TableCell key={col.key} sx={{ color: '#00FFD0', fontWeight: 700 }}>{col.label}</TableCell>
+                        <TableCell key={col.key} sx={{ background: '#1A1C23', color: '#00FFD0', fontWeight: 700 }}>{col.label}</TableCell>
                     ))}
                   </TableRow>
                   {/* Rows for this type */}
