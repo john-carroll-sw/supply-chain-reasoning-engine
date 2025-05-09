@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CssBaseline, Container, Box, Paper, Typography, ThemeProvider, IconButton, Collapse } from "@mui/material";
 import ControlsPanel from "./components/ControlsPanel";
 import ReasoningPanel from "./components/ReasoningPanel";
@@ -12,30 +12,33 @@ import AzureMapView from "./components/AzureMapView";
 
 const App: React.FC = () => {
   const [reasoningResult, setReasoningResult] = useState<ReasoningResponse | undefined>(undefined);
-  const [mapRefreshKey, setMapRefreshKey] = useState(0);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-
-  const getDefaultMapPanelHeight = (hasRecommendations: boolean) => {
-    if (hasRecommendations) {
-      return window.innerHeight * 0.35; // Map smaller if recommendations
-    }
-    return window.innerHeight * 0.9; // Map bigger by default
-  };
-
-  const [mapPanelHeight, setMapPanelHeight] = useState(getDefaultMapPanelHeight(!!reasoningResult?.recommendations?.length));
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [mapPanelHeight, setMapPanelHeight] = useState(window.innerHeight * 0.5); 
   const [isDragging, setIsDragging] = useState(false);
-
+  
   const handleReasoningResult = (result: ReasoningResponse | undefined) => {
     setReasoningResult(result);
   };
-
+  
   const handleStateChange = () => {
-    setMapRefreshKey((k) => k + 1);
+    // Trigger a map resize after a short delay to ensure the DOM has updated
+    setTimeout(() => {
+      if (window.resizeMap) {
+        window.resizeMap();
+      }
+    }, 100);
   };
-
+  
   const handleMouseDown = () => {
     setIsDragging(true);
   };
+
+  // Resize map when mapPanelHeight changes
+  useEffect(() => {
+    if (window.resizeMap) {
+      window.resizeMap();
+    }
+  }, [mapPanelHeight]);
 
   React.useEffect(() => {
     if (!isDragging) return;
@@ -70,29 +73,31 @@ const App: React.FC = () => {
           maxWidth={false}
           disableGutters
           sx={{
-            pt: 6,
-            height: "calc(100vh - 40px)",
+            height: "calc(100vh - 10px)",
             width: "100vw",
             display: "flex",
             flexDirection: "column",
             m: 0,
             p: 2,
+            // pt: 0,
+            // pb: 0,
           }}
         >
-          <Typography variant="h4" gutterBottom sx={{ color: "primary.main", mb: 4 }}>
+          <Typography variant="h4" gutterBottom sx={{ color: "primary.main", mb: 2 }}>
             Supply Chain Reasoning Demo
           </Typography>
-          <Box sx={{ display: "flex", flexGrow: 1, gap: 4, overflow: "hidden" }}>
-            {/* Sidebar: Controls and Tables */}
+          <Box sx={{ display: "flex", flexGrow: 1, gap: 2, overflow: "hidden" }}>
+            {/* Sidebar: Controls, AI Analysis and Recommendations */}
             <Box sx={{ display: "flex", flexDirection: "row", transition: "all 0.3s ease" }}>
               <Collapse in={!isSidebarCollapsed} orientation="horizontal">
-                <Paper elevation={2} sx={{
+                <Paper elevation={4} sx={{
                   flex: 1.1,
                   minWidth: isSidebarCollapsed ? 0 : 340,
                   width: isSidebarCollapsed ? 0 : 'auto',
+                  maxWidth: '30vw',
                   display: "flex",
                   flexDirection: "column",
-                  gap: 3,
+                  gap: 2,
                   overflow: "auto",
                   transition: "all 0.3s ease",
                   p: 2,
@@ -101,8 +106,7 @@ const App: React.FC = () => {
                   borderRadius: '8px 0 0 8px', // Only left corners rounded
                 }}>
                   <ControlsPanel onReasoningResult={handleReasoningResult} onStateChange={handleStateChange} />
-                  <NodeSummaryTable refreshKey={mapRefreshKey} />
-                  <DisruptionsTable refreshKey={mapRefreshKey} />
+                  <ReasoningPanel reasoning={reasoningResult} />
                 </Paper>
               </Collapse>
               <Box
@@ -115,14 +119,22 @@ const App: React.FC = () => {
                 }}
               >
                 <IconButton
-                  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                  onClick={() => {
+                    setIsSidebarCollapsed(!isSidebarCollapsed);
+                    // Trigger map resize after sidebar animation completes
+                    setTimeout(() => {
+                      if (window.resizeMap) {
+                        window.resizeMap();
+                      }
+                    }, 350);  // slightly longer than the transition duration
+                  }}
                   sx={{ color: "white" }}
                 >
                   {isSidebarCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
                 </IconButton>
               </Box>
             </Box>
-            {/* Main: Map and Recommendations stacked vertically */}
+            {/* Main: Map and Tables stacked vertically */}
             <Box sx={{ flex: 2, minWidth: 700, display: "flex", flexDirection: "column", gap: 0, overflow: "auto", height: "100%", minHeight: 0 }}>
               <Paper
                 id="main-map-container"
@@ -136,24 +148,25 @@ const App: React.FC = () => {
                   background: "linear-gradient(135deg, #23262F 60%, #23262F 100%)",
                   transition: "height 0.2s",
                   position: "relative",
+                  flex: 'none',
                 }}
               >
                 <AzureMapView />
               </Paper>
-              <div
-                className="draggable-divider"
-                onMouseDown={handleMouseDown}
-              />
+              <div className="draggable-divider" onMouseDown={handleMouseDown} />
               <Paper elevation={2} sx={{
                 p: 3,
                 minHeight: 100,
-                height: `calc(100% - ${mapPanelHeight + 12}px)`,
+                height: `calc(100% - ${mapPanelHeight}px - 8px)`,
                 overflow: "auto",
                 display: "flex",
                 flexDirection: "column",
                 transition: "height 0.2s",
+                gap: 3,
+                flex: 'none',
               }}>
-                <ReasoningPanel reasoning={reasoningResult} />
+                <NodeSummaryTable />
+                <DisruptionsTable />
               </Paper>
             </Box>
           </Box>

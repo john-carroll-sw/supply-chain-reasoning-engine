@@ -1,11 +1,22 @@
 export type NodeType = 'factory' | 'distribution_center' | 'retail';
 
+export interface InventoryRecord {
+  skuId: string;
+  quantity: number;
+  minInventory?: number;
+  maxInventory?: number;
+}
+
 export interface SupplyChainNode {
   id: string;
   name: string;
   type: NodeType;
-  inventory: Record<string, number>; // SKU -> quantity
+  inventory: InventoryRecord[];
   location: { lat: number; lng: number };
+  // Optional fields for factories and retails
+  productionRates?: Record<string, number>;
+  productionTimes?: Record<string, number>;
+  demand?: Record<string, number>;
 }
 
 export interface SupplyChainRoute {
@@ -32,6 +43,7 @@ export interface DisruptionRequest {
 export interface ReasoningRequest {
   disruptionType: string;
   details: Record<string, string | number | undefined>;
+  optimizationPriority: string;
 }
 
 export interface Recommendation {

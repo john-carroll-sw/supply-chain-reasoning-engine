@@ -4,8 +4,9 @@ import {
   Select, Button, Box, FormHelperText, CircularProgress,
   Alert, Snackbar
 } from "@mui/material";
-import type { SupplyChainState, DisruptionRequest, ReasoningResponse } from "../types/supplyChain";
-import { getSupplyChainState, triggerDisruption, getReasoning, resetSupplyChain as resetSupplyChainApi } from "../api/supplyChainApi";
+import type { DisruptionRequest, ReasoningResponse } from "../types/supplyChain";
+import { triggerDisruption, getReasoning, resetSupplyChain as resetSupplyChainApi } from "../api/supplyChainApi";
+import { useSupplyChain } from "../hooks/useSupplyChain";
 
 interface ControlsPanelProps {
   onReasoningResult?: (result: ReasoningResponse | undefined) => void;
@@ -13,12 +14,13 @@ interface ControlsPanelProps {
 }
 
 const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStateChange }) => {
-  const [supplyChain, setSupplyChain] = useState<SupplyChainState | null>(null);
+  const { supplyChain, refreshSupplyChain } = useSupplyChain();
   const [disruptionType, setDisruptionType] = useState<string>("");
   const [nodeId, setNodeId] = useState<string>("");
   const [routeId, setRouteId] = useState<string>("");
-  const [sku, setSku] = useState<string>("skuA");
+  const [sku, setSku] = useState<string>(""); // Changed from "skuA" to empty string
   const [bridgeId, setBridgeId] = useState<string>("");
+  const [optimizationPriority, setOptimizationPriority] = useState<string>("cost");
   const [loading, setLoading] = useState<boolean>(false);
   const [reasoningLoading, setReasoningLoading] = useState<boolean>(false);
   const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: "success" | "error"}>({
@@ -26,19 +28,6 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
     message: "",
     severity: "success"
   });
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getSupplyChainState();
-        setSupplyChain(data);
-      } catch (err) {
-        console.error("Error fetching supply chain data:", err);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   // Reset secondary fields when disruption type changes
   useEffect(() => {
@@ -55,6 +44,31 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
       setRouteId("");
     }
   }, [disruptionType]);
+
+  // Compute available SKUs for the selected node
+  const availableSkus = React.useMemo(() => {
+    if (disruptionType === "stockout" && nodeId && supplyChain) {
+      const node = supplyChain.nodes.find((n: import("../types/supplyChain").SupplyChainNode) => n.id === nodeId);
+      if (node) {
+        return Object.entries(node.inventory)
+          // .filter(([_, qty]) => qty > 0)
+          .filter(([, inventoryRecord]) => inventoryRecord.quantity > 0)
+          .map(([key]) => key);
+      }
+    }
+    return [];
+  }, [disruptionType, nodeId, supplyChain]);
+
+  // Ensure SKU value is always valid for Select
+  useEffect(() => {
+    if (disruptionType === "stockout") {
+      if (availableSkus.length === 0) {
+        setSku("");
+      } else if (!availableSkus.includes(sku)) {
+        setSku(availableSkus[0]);
+      }
+    }
+  }, [disruptionType, nodeId, availableSkus, sku]);
 
   const handleTriggerDisruption = async () => {
     if (!disruptionType) {
@@ -83,15 +97,14 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
         severity: "success"
       });
       
-      // Refresh supply chain state
-      const updatedData = await getSupplyChainState();
-      setSupplyChain(updatedData);
+      // Refresh supply chain state via context
+      await refreshSupplyChain();
       if (onStateChange) onStateChange();
     } catch (error) {
       console.error("Error triggering disruption:", error);
       setSnackbar({
         open: true,
-        message: "Failed to trigger disruption",
+        message: error instanceof Error ? error.message : "Failed to trigger disruption",
         severity: "error"
       });
     } finally {
@@ -124,7 +137,8 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
 
       const result = await getReasoning({
         disruptionType,
-        details
+        details,
+        optimizationPriority
       });
 
       // Pass reasoning result to parent component
@@ -141,7 +155,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
       console.error("Error getting reasoning:", error);
       setSnackbar({
         open: true,
-        message: "Failed to generate AI reasoning",
+        message: error instanceof Error ? error.message : "Failed to generate AI reasoning",
         severity: "error"
       });
     } finally {
@@ -158,6 +172,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
         message: "Demo state reset to initial values.",
         severity: "success"
       });
+      await refreshSupplyChain();
       if (onStateChange) onStateChange();
       // Optionally, also clear reasoning panel
       if (onReasoningResult) onReasoningResult(undefined);
@@ -177,6 +192,20 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
       <Typography variant="subtitle1" gutterBottom>
         Simulate disruptions and get AI reasoning
       </Typography>
+      <FormControl fullWidth margin="normal">
+        <InputLabel>Optimization Priority</InputLabel>
+        <Select
+          value={optimizationPriority}
+          onChange={(e) => setOptimizationPriority(e.target.value)}
+          label="Optimization Priority"
+        >
+          <MenuItem value="cost">Cost Efficiency</MenuItem>
+          <MenuItem value="time">Time Efficiency</MenuItem>
+          <MenuItem value="service">Service Level</MenuItem>
+          <MenuItem value="risk">Risk Minimization</MenuItem>
+        </Select>
+        <FormHelperText>Select what to optimize for in recommendations</FormHelperText>
+      </FormControl>
       <FormControl fullWidth margin="normal">
         <InputLabel>Disruption Type</InputLabel>
         <Select
@@ -201,8 +230,8 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
               label="Node"
             >
               {supplyChain?.nodes
-                .filter(node => node.type === "retail")
-                .map((node) => (
+                .filter((node: import("../types/supplyChain").SupplyChainNode) => node.type === "retail")
+                .map((node: import("../types/supplyChain").SupplyChainNode) => (
                   <MenuItem key={node.id} value={node.id}>
                     {node.name}
                   </MenuItem>
@@ -217,15 +246,11 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
               onChange={(e) => setSku(e.target.value)}
               label="SKU"
             >
-              {supplyChain?.nodes.find(node => node.id === nodeId)
-                ? Object.entries(supplyChain.nodes.find(node => node.id === nodeId)!.inventory)
-                    .filter(entry => entry[1] > 0)
-                    .map(([key]) => (
-                      <MenuItem key={key} value={key}>
-                        {key.toUpperCase()}
-                      </MenuItem>
-                    ))
-                : null}
+              {availableSkus.map((key) => (
+                <MenuItem key={key} value={key}>
+                  {key.toUpperCase()}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </>
@@ -239,9 +264,9 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ onReasoningResult, onStat
             onChange={(e) => setRouteId(e.target.value)}
             label="Route"
           >
-            {supplyChain?.routes.map((route) => {
-              const fromNode = supplyChain.nodes.find(n => n.id === route.from)?.name;
-              const toNode = supplyChain.nodes.find(n => n.id === route.to)?.name;
+            {supplyChain?.routes.map((route: import("../types/supplyChain").SupplyChainRoute) => {
+              const fromNode = supplyChain.nodes.find((n: import("../types/supplyChain").SupplyChainNode) => n.id === route.from)?.name;
+              const toNode = supplyChain.nodes.find((n: import("../types/supplyChain").SupplyChainNode) => n.id === route.to)?.name;
               return (
                 <MenuItem key={route.id} value={route.id}>
                   {fromNode} → {toNode}

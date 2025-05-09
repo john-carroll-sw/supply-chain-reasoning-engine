@@ -117,3 +117,69 @@
   margin-right: 10px;
   display: inline-block;
 }
+
+/* Azure Map popup styles */
+.popup-content-container {
+  border-radius: 10px !important;
+}
+
+.map-popup {
+  padding: 8px;
+  max-width: 200px;
+  background: #23262F !important;
+  color: #F4F4F4 !important;
+  border-radius: 10px;
+  box-shadow: 0 2px 16px 0 #000a;
+}
+
+.map-popup-title {
+  margin: 0 0 8px;
+  color: #00FFD0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.map-popup-detail {
+  margin: 4px 0;
+  color: #F4F4F4;
+  font-size: 14px;
+}
+
+/* Azure Maps Container */
+.azure-map-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  position: relative;
+}
+
+/* Azure Maps accessibility styles with cross-browser compatibility */
+@media (forced-colors: active) {
+  .azure-map-control, 
+  .atlas-map-canvas,
+  .atlas-map-control,
+  .atlas-draw-control,
+  .atlas-layer {
+    -webkit-appearance: none;
+    appearance: none;
+    /* Using only widely supported properties */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* Suppress geometry warning by limiting vector tile buffer size */
+.atlas-map-canvas {
+  --vector-tile-buffer: 64;
+}
+
+/* Cross-browser compatible contrast handling for Azure Maps elements */
+.azure-map-control *,
+.atlas-map-canvas *,
+.atlas-map-control *,
+.atlas-draw-control *,
+.atlas-layer * {
+  /* Using only widely supported properties */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}

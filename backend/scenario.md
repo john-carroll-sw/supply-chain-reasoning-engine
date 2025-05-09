@@ -30,7 +30,9 @@ curl -X POST http://localhost:4000/api/supplychain/disrupt \
   -H "Content-Type: application/json" \
   -d '{"type": "stockout", "nodeId": "r1", "sku": "skuA"}'
 
-curl -X POST http://localhost:4000/api/reason
+curl -X POST http://localhost:4000/api/reason \
+  -H "Content-Type: application/json" \
+  -d '{"optimizationPriority": "cost"}'
 ```
 
 ## Scenario 2: Route Closed from DC 1 to Retail 1
@@ -49,7 +51,9 @@ curl -X POST http://localhost:4000/api/supplychain/disrupt \
   -H "Content-Type: application/json" \
   -d '{"type": "route_closed", "routeId": "r-dc1-r1"}'
 
-curl -X POST http://localhost:4000/api/reason
+curl -X POST http://localhost:4000/api/reason \
+  -H "Content-Type: application/json" \
+  -d '{"optimizationPriority": "cost"}'
 ```
 
 ## Scenario 3: Both DCs Low on Inventory
@@ -70,7 +74,9 @@ curl -X POST http://localhost:4000/api/supplychain/disrupt \
   -H "Content-Type: application/json" \
   -d '{"type": "stockout", "nodeId": "r1", "sku": "skuA"}'
 
-curl -X POST http://localhost:4000/api/reason
+curl -X POST http://localhost:4000/api/reason \
+  -H "Content-Type: application/json" \
+  -d '{"optimizationPriority": "cost"}'
 ```
 
 ---
