@@ -10,6 +10,7 @@
         }
     ],
     "configurations": [
+        
         {
             "name": "Launch Frontend",
             "type": "node",
