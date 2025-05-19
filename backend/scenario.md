@@ -3,13 +3,13 @@
 ## Reset Demo State
 
 ```bash
-curl -X POST http://localhost:4000/api/supplychain/reset
+curl -X POST http://localhost:4020/api/supplychain/reset
 ```
 
 ## Get Supply Chain State
 
 ```bash
-curl http://localhost:4000/api/supplychain
+curl http://localhost:4020/api/supplychain
 ```
 
 ## Scenario 1: Stockout at Retail 1
@@ -26,11 +26,11 @@ curl http://localhost:4000/api/supplychain
 - **Test with:**
 
 ```bash
-curl -X POST http://localhost:4000/api/supplychain/disrupt \
+curl -X POST http://localhost:4020/api/supplychain/disrupt \
   -H "Content-Type: application/json" \
   -d '{"type": "stockout", "nodeId": "r1", "sku": "skuA"}'
 
-curl -X POST http://localhost:4000/api/reason \
+curl -X POST http://localhost:4020/api/reason \
   -H "Content-Type: application/json" \
   -d '{"optimizationPriority": "cost"}'
 ```
@@ -47,11 +47,11 @@ curl -X POST http://localhost:4000/api/reason \
 - **Test with:**
 
 ```bash
-curl -X POST http://localhost:4000/api/supplychain/disrupt \
+curl -X POST http://localhost:4020/api/supplychain/disrupt \
   -H "Content-Type: application/json" \
   -d '{"type": "route_closed", "routeId": "r-dc1-r1"}'
 
-curl -X POST http://localhost:4000/api/reason \
+curl -X POST http://localhost:4020/api/reason \
   -H "Content-Type: application/json" \
   -d '{"optimizationPriority": "cost"}'
 ```
@@ -70,11 +70,11 @@ curl -X POST http://localhost:4000/api/reason \
 (Manually set DC 1 and DC 2 inventory to a low value in supplyChain.ts, then run:)
 
 ```bash
-curl -X POST http://localhost:4000/api/supplychain/disrupt \
+curl -X POST http://localhost:4020/api/supplychain/disrupt \
   -H "Content-Type: application/json" \
   -d '{"type": "stockout", "nodeId": "r1", "sku": "skuA"}'
 
-curl -X POST http://localhost:4000/api/reason \
+curl -X POST http://localhost:4020/api/reason \
   -H "Content-Type: application/json" \
   -d '{"optimizationPriority": "cost"}'
 ```

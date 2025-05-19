@@ -15,7 +15,7 @@ window.initAzureMap = async function(container) {
   // Fetch supply chain state (not just nodes) to get airplanes and routes
   let nodes = [], airplanes = [], routes = [];
   try {
-    const res = await fetch('http://localhost:4000/api/supplychain');
+    const res = await fetch('http://localhost:4020/api/supplychain');
     const data = await res.json();
     nodes = data.nodes || [];
     airplanes = data.airplanes || [];

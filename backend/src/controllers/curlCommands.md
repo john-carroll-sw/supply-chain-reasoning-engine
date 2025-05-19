@@ -3,13 +3,13 @@
 ## Get Supply Chain State
 
 ```bash
-curl http://localhost:4000/api/supplychain
+curl http://localhost:4020/api/supplychain
 ```
 
 ## Trigger a Stockout Disruption
 
 ```bash
-curl -X POST http://localhost:4000/api/supplychain/disrupt \
+curl -X POST http://localhost:4020/api/supplychain/disrupt \
   -H "Content-Type: application/json" \
   -d '{"type": "stockout", "nodeId": "r1", "sku": "skuA"}'
 ```
@@ -17,7 +17,7 @@ curl -X POST http://localhost:4000/api/supplychain/disrupt \
 ## Trigger a Route Closed Disruption
 
 ```bash
-curl -X POST http://localhost:4000/api/supplychain/disrupt \
+curl -X POST http://localhost:4020/api/supplychain/disrupt \
   -H "Content-Type: application/json" \
   -d '{"type": "route_closed", "routeId": "r-dc1-r1"}'
 ```
@@ -25,7 +25,7 @@ curl -X POST http://localhost:4000/api/supplychain/disrupt \
 ## Get AI Reasoning for a Stockout
 
 ```bash
-curl -X POST http://localhost:4000/api/reason \
+curl -X POST http://localhost:4020/api/reason \
   -H "Content-Type: application/json" \
   -d '{"disruptionType": "stockout", "details": {"nodeId": "r1", "sku": "skuA"}}'
 ```
@@ -33,7 +33,7 @@ curl -X POST http://localhost:4000/api/reason \
 ## Get AI Reasoning for a Route Closure
 
 ```bash
-curl -X POST http://localhost:4000/api/reason \
+curl -X POST http://localhost:4020/api/reason \
   -H "Content-Type: application/json" \
   -d '{"disruptionType": "route_closed", "details": {"routeId": "r-dc1-r1"}}'
 ```

@@ -5,7 +5,7 @@ import type {
   ReasoningResponse
 } from '../types/supplyChain';
 
-const API_BASE = 'http://localhost:4000/api';
+const API_BASE = 'http://localhost:4020/api';
 
 /**
  * Fetches the current supply chain state from the backend

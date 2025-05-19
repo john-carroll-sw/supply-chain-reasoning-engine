@@ -9,7 +9,7 @@ import reasoningRouter from './routes/reasoning';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4020;
 
 app.use(cors());
 app.use(express.json());
